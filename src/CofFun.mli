@@ -1,5 +1,5 @@
 (** A family of polynomial endofunctors [('r, -) t] indexed in an interpretation of the interval algebra ['r].
-    This is for multiple types (for example, abstract syntax and domains) to {i embed} the langauge of cofibrations. *)
+    This is for multiple types (for example, abstract syntax) to {i embed} the langauge of cofibrations. *)
 type ('r, 'a) t =
   | Eq of 'r * 'r
   | Join of 'a list
