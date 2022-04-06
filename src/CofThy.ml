@@ -1,6 +1,16 @@
 open StdLabels
 open Bwd
 
+module type Param =
+sig
+  module Dim : sig
+    include Map.OrderedType
+    val dim0 : t
+    val dim1 : t
+  end
+  module Var : Map.OrderedType
+end
+
 module type S =
 sig
   type dim
@@ -12,12 +22,7 @@ sig
     type t
     val empty : t
     val consistency : t -> [`Consistent | `Inconsistent]
-    val left_invert_under_cofs
-      : seq:((t -> 'a) -> t list -> 'a)
-      -> t
-      -> cof list
-      -> (t -> 'a)
-      -> 'a
+    val split : t -> cof list -> t list
     val meet2 : t -> t -> t
   end
 
@@ -29,26 +34,12 @@ sig
     val consistency : t -> [`Consistent | `Inconsistent]
     val assume : t -> cof list -> t
     val test_sequent : t -> cof list -> cof -> bool
-    val left_invert
-      : seq:((Alg.t -> 'a) -> Alg.t list -> 'a)
-      -> t
-      -> (Alg.t -> 'a)
-      -> 'a
+    val split_alg : t -> Alg.t list
     val meet2 : t -> t -> t
   end
 end
 
-module type Param =
-sig
-  module Dim : sig
-    include Map.OrderedType
-    val dim0 : t
-    val dim1 : t
-  end
-  module Var : Map.OrderedType
-end
-
-module Make (P : Param) =
+module Make (P : Param) : S with type dim = P.Dim.t and type var = P.Var.t =
 struct
   include P
   type dim = Dim.t
@@ -235,9 +226,6 @@ struct
       | Cof.Var v ->
         test_var thy' v
 
-    let left_invert_under_cofs ~seq (thy : t) cofs cont =
-      seq cont @@ split thy cofs
-
     let meet2' thy'1 thy'2 =
       let thy' =
         {classes = UF.merge thy'1.classes thy'2.classes;
@@ -339,8 +327,8 @@ struct
       List.map ~f:(fun (thy', _) -> thy') @@
       split thy cx
 
-    let left_invert ~seq thy cont =
-      seq cont @@ List.map thy ~f:(fun (thy', _) -> `Consistent thy')
+    let split_alg thy =
+      List.map thy ~f:(fun (thy', _) -> `Consistent thy')
 
     let meet2 (thy1 : t) (thy2 : t) : t =
       (* a correct but unoptimized theory *)

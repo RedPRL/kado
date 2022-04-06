@@ -18,7 +18,7 @@ module BuilderFun : module type of BuilderFun
 (** Smart constructors for freely generated cofibrations *)
 module Builder : module type of Builder
 
-(** {1 Decision procedures} *)
+(** {1 Decision Procedures} *)
 
 (** The {!module:CofThy} module implements decision procedures for sequents relative to a theory over the interval, stated in the language of cofibrations. *)
 module CofThy : module type of CofThy
