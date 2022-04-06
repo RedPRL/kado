@@ -30,11 +30,11 @@ sig
   sig
     type t
     val empty : t
-    val envelope_alg : Alg.t -> t
     val consistency : t -> [`Consistent | `Inconsistent]
     val assume : t -> cof list -> t
     val test_sequent : t -> cof list -> cof -> bool
-    val split_alg : t -> Alg.t list
+    val envelope_alg : Alg.t -> t
+    val decompose : t -> Alg.t list
     val meet2 : t -> t -> t
   end
 end
@@ -327,7 +327,7 @@ struct
       List.map ~f:(fun (thy', _) -> thy') @@
       split thy cx
 
-    let split_alg thy =
+    let decompose thy =
       List.map thy ~f:(fun (thy', _) -> `Consistent thy')
 
     let meet2 (thy1 : t) (thy2 : t) : t =

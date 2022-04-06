@@ -34,13 +34,13 @@ sig
     (** The empty theory. *)
     val empty : t
 
-    (** Returns the consistency of the theory. *)
+    (** [consistency thy] returns the consistency of the theory [thy]. *)
     val consistency : t -> [`Consistent | `Inconsistent]
 
     (** [split thy cofs] returns irreducible joins under additional cofibrations [cofs]. *)
     val split : t -> cof list -> t list
 
-    (** Compute the conjunction of two theories. *)
+    (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2]. *)
     val meet2 : t -> t -> t
   end
 
@@ -53,23 +53,23 @@ sig
     (** The empty theory. *)
     val empty : t
 
-    (** Construct the enveloping disjunctive theory of an algebraic theory. *)
-    val envelope_alg : Alg.t -> t
-
-    (** Returns the consistency of the theory. *)
+    (** [consistency thy] returns the consistency of the theory [thy]. *)
     val consistency : t -> [`Consistent | `Inconsistent]
 
-    (** Assumes the truth of a cofibration. *)
+    (** [assume thy cofs] assumes [cofs] and returns the new theory. *)
     val assume : t -> cof list -> t
 
-    (** Tests the validity of a sequent against the supplied theory. Equivalent to assuming
-        the conjunction of the context and then testing truth. *)
+    (** [test_sequent thy context cof] tests the validity of a sequent against the supplied theory.
+        Equivalent to assuming the cofibrations [context] and then testing truthness of [cof]. *)
     val test_sequent : t -> cof list -> cof -> bool
 
-    (** [split_alg] returns irreducible joins as algebraic theories. *)
-    val split_alg : t -> Alg.t list
+    (** [envelope_alg thy] constructs the enveloping disjunctive theory of the algebraic theory [thy]. *)
+    val envelope_alg : Alg.t -> t
 
-    (** Compute the conjunction of two theories. *)
+    (** [decompose thy] returns irreducible joins as algebraic theories. *)
+    val decompose : t -> Alg.t list
+
+    (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2]. *)
     val meet2 : t -> t -> t
   end
 end
