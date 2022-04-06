@@ -5,3 +5,7 @@ This is a standalone library for cofibrations in Cartesian cubical type theory a
 ## Stability
 
 ⚠ The API is experimental and unstable. We will break things!
+
+## API documentation
+
+[API documentation.](https://redprl.org/kado/kado/Kado)
