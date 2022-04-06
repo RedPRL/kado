@@ -7,7 +7,7 @@
 (** Endofunctors for cofibrations. *)
 module CofFun : module type of CofFun
 
-(** Cofibrations. *)
+(** Freely generated cofibrations. *)
 module Cof : module type of Cof
 
 (** Cofibration smart constructors. *)
@@ -15,10 +15,10 @@ module Cof : module type of Cof
 (** Smart constructors for endofunctors *)
 module BuilderFun : module type of BuilderFun
 
-(** Smart constructors for cofibrations *)
+(** Smart constructors for freely generated cofibrations *)
 module Builder : module type of Builder
 
-(** {1 Solver} *)
+(** {1 Decision procedures} *)
 
 (** The {!module:CofThy} module implements decision procedures for sequents relative to a theory over the interval, stated in the language of cofibrations. *)
 module CofThy : module type of CofThy

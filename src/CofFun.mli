@@ -1,6 +1,5 @@
 (** A family of polynomial endofunctors [('r, -) t] indexed in an interpretation of the interval algebra ['r].
-    Multiple types in [cooltt] will need to {i include} the langauge of cofibrations, relative to a particular interval algebra ['r],
-    and thus we keep ['a] generic. *)
+    This is for multiple types (for example, abstract syntax and domains) to {i embed} the langauge of cofibrations. *)
 type ('r, 'a) t =
   | Eq of 'r * 'r
   | Join of 'a list

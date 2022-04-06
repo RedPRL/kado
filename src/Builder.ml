@@ -12,25 +12,18 @@ sig
   type var
   type cof = (dim, var) Cof.t
 
-  val eq : dim -> dim -> cof
-  val bot : cof
-  val top : cof
-
-  val join : cof list -> cof
-  val meet : cof list -> cof
-  val boundary : dim -> cof
+  include BuilderFun.S with type dim := dim and type cof := cof
 end
 
 module Make (P : Param) : S with type dim = P.dim and type var = P.var =
 struct
-  type var = P.var
-  include BuilderFun.Make(
-    struct
-      type dim = P.dim
-      let dim0 = P.dim0
-      let dim1 = P.dim1
-      type cof = (P.dim, P.var) Cof.t
-      let cof phi = Cof.Cof phi
-      let uncof phi = match phi with Cof.Cof phi -> Some phi | _ -> None
-    end)
+  module P = struct
+    include P
+    type cof = (dim, var) Cof.t
+    let cof phi = Cof.Cof phi
+    let uncof phi = match phi with Cof.Cof phi -> Some phi | _ -> None
+  end
+
+  include P
+  include BuilderFun.Make(P)
 end
