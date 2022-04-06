@@ -1,0 +1,4 @@
+(library
+ (name Kado)
+ (libraries bwd)
+ (public_name kado))
