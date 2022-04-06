@@ -19,3 +19,9 @@ val bot : ('r, 'a) t
 
 (** [top] is [Meet []] *)
 val top : ('r, 'a) t
+
+(** Ugly printer *)
+val dump :
+  (Format.formatter -> 'r -> unit) ->
+  (Format.formatter -> 'a -> unit) ->
+  Format.formatter -> ('r, 'a) t -> unit

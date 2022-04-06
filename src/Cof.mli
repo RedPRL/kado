@@ -23,3 +23,9 @@ val bot : ('a, 'v) t
 
 (** [top] is [Cof (Meet [])] *)
 val top : ('a, 'v) t
+
+(** Ugly printer *)
+val dump :
+  (Format.formatter -> 'r -> unit) ->
+  (Format.formatter -> 'v -> unit) ->
+  Format.formatter -> ('r, 'v) t -> unit
