@@ -1,5 +1,3 @@
-(** Endofunctors for cofibrations. *)
-
 (** A family of polynomial endofunctors [('r, -) t] indexed in an interpretation of the interval algebra ['r].
     Multiple types in [cooltt] will need to {i include} the langauge of cofibrations, relative to a particular interval algebra ['r],
     and thus we keep ['a] generic. *)

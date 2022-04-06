@@ -1,29 +1,3 @@
-module type GenericParam =
-sig
-  type dim
-  type var
-end
-
-module GenericMake (P : GenericParam) :
-sig
-  val eq : P.dim -> P.dim -> (P.dim, P.var) Cof.t
-  val bot : (P.dim, P.var) Cof.t
-  val top : (P.dim, P.var) Cof.t
-
-  val join : (P.dim, P.var) Cof.t list -> (P.dim, P.var) Cof.t
-  val meet : (P.dim, P.var) Cof.t list -> (P.dim, P.var) Cof.t
-end
-=
-struct
-  include BuilderFun.GenericMake(
-    struct
-      include P
-      type cof = (P.dim, P.var) Cof.t
-      let cof phi = Cof.Cof phi
-      let uncof phi = match phi with Cof.Cof phi -> Some phi | _ -> None
-    end)
-end
-
 module type Param =
 sig
   type dim
@@ -32,21 +6,29 @@ sig
   val dim1 : dim
 end
 
-module Make (P : Param) :
+module type S =
 sig
-  val eq : P.dim -> P.dim -> (P.dim, P.var) Cof.t
-  val bot : (P.dim, P.var) Cof.t
-  val top : (P.dim, P.var) Cof.t
+  type dim
+  type var
+  type cof = (dim, var) Cof.t
 
-  val join : (P.dim, P.var) Cof.t list -> (P.dim, P.var) Cof.t
-  val meet : (P.dim, P.var) Cof.t list -> (P.dim, P.var) Cof.t
-  val boundary : P.dim -> (P.dim, P.var) Cof.t
+  val eq : dim -> dim -> cof
+  val bot : cof
+  val top : cof
+
+  val join : cof list -> cof
+  val meet : cof list -> cof
+  val boundary : dim -> cof
 end
-=
+
+module Make (P : Param) : S with type dim = P.dim and type var = P.var =
 struct
+  type var = P.var
   include BuilderFun.Make(
     struct
-      include P
+      type dim = P.dim
+      let dim0 = P.dim0
+      let dim1 = P.dim1
       type cof = (P.dim, P.var) Cof.t
       let cof phi = Cof.Cof phi
       let uncof phi = match phi with Cof.Cof phi -> Some phi | _ -> None

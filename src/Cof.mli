@@ -1,5 +1,3 @@
-(** Cofibrations. *)
-
 (** For each interval algebra ['r], we define the {i free monad} [('r, -) t] on the polynomial endofunctor [('r, -) CofFun.t]: each [('r, 'v) t] is the language of cofibrations over an interval algebra ['r], with indeterminates drawn from ['v]. *)
 type ('r, 'v) t =
   | Cof of ('r, ('r, 'v) t) CofFun.t

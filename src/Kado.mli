@@ -4,14 +4,18 @@
 
 (** The abstract syntax of the restricted predicate logic of cofibrations. *)
 
+(** Endofunctors for cofibrations. *)
 module CofFun : module type of CofFun
 
+(** Cofibrations. *)
 module Cof : module type of Cof
 
 (** Cofibration smart constructors. *)
 
+(** Smart constructors for endofunctors *)
 module BuilderFun : module type of BuilderFun
 
+(** Smart constructors for cofibrations *)
 module Builder : module type of Builder
 
 (** {1 Solver} *)
