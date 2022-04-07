@@ -1,7 +1,5 @@
-module CofFun = CofFun
-module Cof = Cof
+module Syntax = Syntax
 
-module BuilderFun = BuilderFun
 module Builder = Builder
 
-module CofThy = CofThy
+module Theory = Theory

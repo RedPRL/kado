@@ -15,11 +15,13 @@ module type S =
 sig
   type dim
   type var
-  type cof = (dim, var) Cof.t
+  type cof = (dim, var) Syntax.free
+  type alg_thy
+  type disj_thy
 
   module Alg :
   sig
-    type t
+    type t = alg_thy
     val empty : t
     val consistency : t -> [`Consistent | `Inconsistent]
     val split : t -> cof list -> t list
@@ -28,7 +30,7 @@ sig
 
   module Disj :
   sig
-    type t
+    type t = disj_thy
     val empty : t
     val consistency : t -> [`Consistent | `Inconsistent]
     val assume : t -> cof list -> t
@@ -43,11 +45,14 @@ end
 module Make (P : Param) : S with type dim = P.dim and type var = P.var =
 struct
   include P
-  type cof = (dim, var) Cof.t
+
+  open Syntax
+
+  type cof = (dim, var) free
 
   module UF = DisjointSet.Make (struct type t = dim let compare = compare_dim end)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
-  module B = Builder.Make (P)
+  module B = Builder.Free.Make (P)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
@@ -88,17 +93,17 @@ struct
     | [] -> [VarSet.empty, []]
     | cof :: cofs ->
       match cof with
-      | Cof.Var v ->
+      | Var v ->
         List.map (dissect_cofibrations cofs)
           ~f:(fun (vars, eqs) -> VarSet.add v vars, eqs)
-      | Cof.Cof cof ->
+      | Cof cof ->
         match cof with
-        | CofFun.Meet meet_cofs ->
+        | Meet meet_cofs ->
           dissect_cofibrations @@ meet_cofs @ cofs
-        | CofFun.Join join_cofs ->
+        | Join join_cofs ->
           List.concat_map join_cofs
             ~f:(fun join_cof -> dissect_cofibrations @@ join_cof :: cofs)
-        | CofFun.Eq (r, s) ->
+        | Eq (r, s) ->
           List.map (dissect_cofibrations cofs)
             ~f:(fun (vars, eqs) -> vars, (r, s) :: eqs)
 
@@ -222,17 +227,13 @@ struct
     (** [test] checks whether a cofibration is true within an algebraic theory *)
     let rec test (thy' : alg_thy') : cof -> bool =
       function
-      | Cof.Cof phi ->
-        begin
-          match phi with
-          | CofFun.Eq (r, s) ->
-            test_eq thy' (r, s)
-          | CofFun.Join phis ->
-            List.exists ~f:(test thy') phis
-          | CofFun.Meet phis ->
-            List.for_all ~f:(test thy') phis
-        end
-      | Cof.Var v ->
+      | Cof Eq (r, s) ->
+        test_eq thy' (r, s)
+      | Cof Join phis ->
+        List.exists ~f:(test thy') phis
+      | Cof Meet phis ->
+        List.for_all ~f:(test thy') phis
+      | Var v ->
         test_var thy' v
 
     (* XXX: this function was never profiled *)
@@ -353,25 +354,25 @@ struct
             | `Indeterminate -> has_indet := true)
         in
         match !has_true, !has_indet, !has_false with
-        | _, true, _ | true, _, true -> Cof.eq x y
-        | _, false, false -> Cof.top
-        | false, false, _ -> Cof.bot
+        | _, true, _ | true, _, true -> Free.eq x y
+        | _, false, false -> Free.top
+        | false, false, _ -> Free.bot
       in
       let simplify_var v =
         if List.for_all thy ~f:(fun (thy', _) -> Alg.test_var thy' v) then
-          Cof.top
+          Free.top
         else
-          Cof.var v
+          Free.var v
       in
       let rec go =
         function
-        | Cof.Cof (CofFun.Eq (x, y)) ->
+        | Cof Eq (x, y) ->
           simplify_eq (x, y)
-        | Cof.Var v ->
+        | Var v ->
           simplify_var v
-        | Cof.Cof (CofFun.Join phis) ->
+        | Cof Join phis ->
           B.join @@ List.map ~f:go phis
-        | Cof.Cof (CofFun.Meet phis) ->
+        | Cof Meet phis ->
           B.meet @@ List.map ~f:go phis
       in
       go cof

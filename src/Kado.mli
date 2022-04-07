@@ -3,22 +3,12 @@
 (** {1 Syntax} *)
 
 (** The abstract syntax of the restricted predicate logic of cofibrations. *)
+module Syntax : module type of Syntax
 
-(** Endofunctors for cofibrations. *)
-module CofFun : module type of CofFun
-
-(** Freely generated cofibrations. *)
-module Cof : module type of Cof
-
-(** Cofibration smart constructors. *)
-
-(** Smart constructors for endofunctors *)
-module BuilderFun : module type of BuilderFun
-
-(** Smart constructors for freely generated cofibrations *)
+(** Smart constructors. *)
 module Builder : module type of Builder
 
 (** {1 Decision Procedures} *)
 
-(** The {!module:CofThy} module implements decision procedures for sequents relative to a theory over the interval, stated in the language of cofibrations. *)
-module CofThy : module type of CofThy
+(** The {!module:Theory} module implements decision procedures for sequents relative to a theory over the interval, stated in the language of cofibrations. *)
+module Theory : module type of Theory

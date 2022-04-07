@@ -31,13 +31,19 @@ sig
   type var
 
   (** The type of cofibrations. *)
-  type cof = (dim, var) Cof.t
+  type cof = (dim, var) Syntax.free
+
+  (** The type of an algebraic theory (no unreduced joins). *)
+  type alg_thy
+
+  (** The type of a disjunctive theory. *)
+  type disj_thy
 
   (** Algebraic theories over the interval. *)
   module Alg :
   sig
     (** The type of an algebraic theory (no unreduced joins). *)
-    type t
+    type t = alg_thy
 
     (** The empty theory. *)
     val empty : t
@@ -57,7 +63,7 @@ sig
   module Disj :
   sig
     (** The type of a disjunctive theory. *)
-    type t
+    type t = disj_thy
 
     (** The empty theory. *)
     val empty : t
