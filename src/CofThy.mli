@@ -40,7 +40,8 @@ sig
     (** [split thy cofs] returns irreducible joins under additional cofibrations [cofs]. *)
     val split : t -> cof list -> t list
 
-    (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2]. *)
+    (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2].
+        This is useful for supporting compilation units with top-level cofibration declarations. *)
     val meet2 : t -> t -> t
   end
 
@@ -69,7 +70,15 @@ sig
     (** [decompose thy] returns irreducible joins as algebraic theories. *)
     val decompose : t -> Alg.t list
 
-    (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2]. *)
+    (** [simplify_cof thy cof] returns a potentially simplified cofibration that is equivalent to [cof].
+        This is useful for displaying sensible cofibrations to users.
+        While it will remove useless cofibrations such as [r=r] and [0=1],
+        it does not perform non-local simplification such as reducing [x=1 /\ x=1] to [x=1].
+        Also, the simplification is an expensive process and should be used wisely. *)
+    val simplify_cof : t -> cof -> cof
+
+    (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2].
+        This is useful for supporting compilation units with top-level cofibration declarations. *)
     val meet2 : t -> t -> t
   end
 end
