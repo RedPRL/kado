@@ -35,6 +35,7 @@ sig
     val test_sequent : t -> cof list -> cof -> bool
     val envelope_alg : Alg.t -> t
     val decompose : t -> Alg.t list
+    val simplify_cof : t -> cof -> cof
     val meet2 : t -> t -> t
   end
 end
@@ -48,6 +49,13 @@ struct
 
   module UF = DisjointSet.Make (Dim)
   module VarSet = Set.Make (Var)
+  module B = Builder.Make
+      (struct
+        type dim = Dim.t
+        type var = Var.t
+        let dim0 = Dim.dim0
+        let dim1 = Dim.dim1
+      end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
@@ -131,6 +139,15 @@ struct
       let testing, classes = UF.test_and_union r s thy.classes in
       testing, {thy with classes}
 
+    let tri_test_eq thy (x, y) =
+      match unsafe_test_and_assume_eq thy (x, y) with
+      | true, _ -> `True
+      | false, thy' ->
+        if test_eq thy' (Dim.dim0, Dim.dim1) then
+          `False
+        else
+          `Indeterminate
+
     let test_eqs (thy : t') eqs =
       List.for_all ~f:(test_eq thy) eqs
 
@@ -153,7 +170,7 @@ struct
       let go ((thy', eqs) as acc) eq =
         match unsafe_test_and_assume_eq thy' eq with
         | true, _ -> acc
-        | false, thy' -> thy',  Snoc (eqs, eq)
+        | false, thy' -> thy', Snoc (eqs, eq)
       in
       let thy', eqs = List.fold_left ~f:go ~init:(thy, Emp) eqs in
       match test_eq thy' (Dim.dim0, Dim.dim1) with
@@ -226,7 +243,7 @@ struct
       | Cof.Var v ->
         test_var thy' v
 
-    (* XXX: this function was never timed and optimized for actual use *)
+    (* XXX: this function was never profiled *)
     let meet2' thy'1 thy'2 =
       let thy' =
         {classes = UF.merge thy'1.classes thy'2.classes;
@@ -236,7 +253,7 @@ struct
       | true -> `Inconsistent
       | false -> `Consistent thy'
 
-    (* XXX: this function was never timed and optimized for actual use *)
+    (* XXX: this function was never profiled *)
     let meet2 thy1 thy2 =
       match thy1, thy2 with
       | `Inconsistent, _ | _, `Inconsistent -> `Inconsistent
@@ -325,14 +342,49 @@ struct
       refactor_branches @@ split thy cofs
 
     let test_sequent thy cx cof =
-      List.for_all ~f:(fun thy' -> Alg.test thy' cof) @@
-      List.map ~f:(fun (thy', _) -> thy') @@
+      List.for_all ~f:(fun (thy', _) -> Alg.test thy' cof) @@
       split thy cx
 
     let decompose thy =
       List.map thy ~f:(fun (thy', _) -> `Consistent thy')
 
-    (* XXX: this function was never timed and optimized for actual use *)
+    (* XXX: this function was never profiled *)
+    let simplify_cof thy cof =
+      let simplify_eq (x, y) =
+        let has_true = ref false in
+        let has_indet = ref false in
+        let has_false = ref false in
+        let () = List.iter thy ~f:(fun (thy', _) ->
+            match Alg.tri_test_eq thy' (x, y) with
+            | `True -> has_true := true
+            | `False -> has_false := true
+            | `Indeterminate -> has_indet := true)
+        in
+        match !has_true, !has_indet, !has_false with
+        | _, true, _ | true, _, true -> Cof.eq x y
+        | _, false, false -> Cof.top
+        | false, false, _ -> Cof.bot
+      in
+      let simplify_var v =
+        if List.for_all thy ~f:(fun (thy', _) -> Alg.test_var thy' v) then
+          Cof.top
+        else
+          Cof.var v
+      in
+      let rec go =
+        function
+        | Cof.Cof (CofFun.Eq (x, y)) ->
+          simplify_eq (x, y)
+        | Cof.Var v ->
+          simplify_var v
+        | Cof.Cof (CofFun.Join phis) ->
+          B.join @@ List.map ~f:go phis
+        | Cof.Cof (CofFun.Meet phis) ->
+          B.meet @@ List.map ~f:go phis
+      in
+      go cof
+
+    (* XXX: this function was never profiled *)
     let meet2 (thy1 : t) (thy2 : t) : t =
       (* a correct but unoptimized theory *)
       let draft =
