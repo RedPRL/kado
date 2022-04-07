@@ -1,15 +1,23 @@
 (** Parameters of cofibration solvers. *)
 module type Param =
 sig
-  (** The interval algebra *)
-  module Dim : sig
-    include Map.OrderedType
-    val dim0 : t
-    val dim1 : t
-  end
+  (** The interval algebra. *)
+  type dim
 
-  (** The cofibration variables *)
-  module Var : Map.OrderedType
+  (** The type of cofibration variables. *)
+  type var
+
+  (** The point 0 in the interval algebra. *)
+  val dim0 : dim
+
+  (** The point 1 in the interval algebra. *)
+  val dim1 : dim
+
+  (** Comparator for elements of the interval algebra. *)
+  val compare_dim : dim -> dim -> int
+
+  (** Comparator for cofibration variables. *)
+  val compare_var : var -> var -> int
 end
 
 (** The signature of cofibration solvers. *)
@@ -84,4 +92,4 @@ sig
 end
 
 (** The cofibration solver. *)
-module Make (P : Param) : S with type dim = P.Dim.t and type var = P.Var.t
+module Make (P : Param) : S with type dim = P.dim and type var = P.var

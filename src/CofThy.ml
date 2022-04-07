@@ -3,12 +3,12 @@ open Bwd
 
 module type Param =
 sig
-  module Dim : sig
-    include Map.OrderedType
-    val dim0 : t
-    val dim1 : t
-  end
-  module Var : Map.OrderedType
+  type dim
+  type var
+  val dim0 : dim
+  val dim1 : dim
+  val compare_dim : dim -> dim -> int
+  val compare_var : var -> var -> int
 end
 
 module type S =
@@ -40,22 +40,14 @@ sig
   end
 end
 
-module Make (P : Param) : S with type dim = P.Dim.t and type var = P.Var.t =
+module Make (P : Param) : S with type dim = P.dim and type var = P.var =
 struct
   include P
-  type dim = Dim.t
-  type var = Var.t
   type cof = (dim, var) Cof.t
 
-  module UF = DisjointSet.Make (Dim)
-  module VarSet = Set.Make (Var)
-  module B = Builder.Make
-      (struct
-        type dim = Dim.t
-        type var = Var.t
-        let dim0 = Dim.dim0
-        let dim1 = Dim.dim1
-      end)
+  module UF = DisjointSet.Make (struct type t = dim let compare = compare_dim end)
+  module VarSet = Set.Make (struct type t = var let compare = compare_var end)
+  module B = Builder.Make (P)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
@@ -65,7 +57,7 @@ struct
       true_vars : VarSet.t
     }
 
-  type eq = Dim.t * Dim.t
+  type eq = dim * dim
 
   (** A [branch] represents the meet of a bunch of atomic cofibrations. *)
   type branch = VarSet.t * eq list
@@ -143,7 +135,7 @@ struct
       match unsafe_test_and_assume_eq thy (x, y) with
       | true, _ -> `True
       | false, thy' ->
-        if test_eq thy' (Dim.dim0, Dim.dim1) then
+        if test_eq thy' (P.dim0, P.dim1) then
           `False
         else
           `Indeterminate
@@ -173,7 +165,7 @@ struct
         | false, thy' -> thy', Snoc (eqs, eq)
       in
       let thy', eqs = List.fold_left ~f:go ~init:(thy, Emp) eqs in
-      match test_eq thy' (Dim.dim0, Dim.dim1) with
+      match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
       | false -> `Consistent (thy', BwdLabels.to_list eqs)
 
@@ -249,7 +241,7 @@ struct
         {classes = UF.merge thy'1.classes thy'2.classes;
          true_vars = VarSet.union thy'1.true_vars thy'2.true_vars}
       in
-      match test_eq thy' (Dim.dim0, Dim.dim1) with
+      match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
       | false -> `Consistent thy'
 
