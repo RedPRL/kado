@@ -226,6 +226,7 @@ struct
       | Cof.Var v ->
         test_var thy' v
 
+    (* XXX: this function was never timed and optimized for actual use *)
     let meet2' thy'1 thy'2 =
       let thy' =
         {classes = UF.merge thy'1.classes thy'2.classes;
@@ -235,6 +236,7 @@ struct
       | true -> `Inconsistent
       | false -> `Consistent thy'
 
+    (* XXX: this function was never timed and optimized for actual use *)
     let meet2 thy1 thy2 =
       match thy1, thy2 with
       | `Inconsistent, _ | _, `Inconsistent -> `Inconsistent
@@ -330,6 +332,7 @@ struct
     let decompose thy =
       List.map thy ~f:(fun (thy', _) -> `Consistent thy')
 
+    (* XXX: this function was never timed and optimized for actual use *)
     let meet2 (thy1 : t) (thy2 : t) : t =
       (* a correct but unoptimized theory *)
       let draft =
