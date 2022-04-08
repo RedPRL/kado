@@ -81,7 +81,7 @@ struct
         | [phi] -> phi
         | l -> cof @@ Syntax.Endo.meet l
 
-    let boundary r = join [eq r dim0; eq r dim1]
+    let boundary r = join [eq0 r; eq1 r]
 
     let forall (sym, cof) =
       let rec go cof =

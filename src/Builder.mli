@@ -67,7 +67,7 @@ sig
         See {!val:join}. *)
     val meet : cof list -> cof
 
-    (** [boundary r] gives a cofibration equivalent to [join [eq r dim0; eq r dim1]] *)
+    (** [boundary r] gives a cofibration equivalent to [join [eq0 r; eq1 r]] *)
     val boundary : dim -> cof
 
     (** [forall (r, cof)] computes [forall r. cof], using the syntactic quantifier elimination
