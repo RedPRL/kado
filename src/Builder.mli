@@ -17,10 +17,10 @@ sig
     (** The element 1 in the interval algebra. *)
     val dim1 : dim
 
-    (** Equality checker for elements of the interval algebra. *)
+    (** Equality checker for elements in the interval algebra. *)
     val equal_dim : dim -> dim -> bool
 
-    (** The embedding of cofibrations to [cof]. *)
+    (** The embedding of cofibrations into [cof]. *)
     val cof : (dim, cof) Syntax.endo -> cof
 
     (** Extract the embedded cofibration, if any. *)
@@ -58,7 +58,7 @@ sig
         For example, [join [meet []]] gives [cof (Meet [])].
 
         Note that the simplification is attempting to strike a balance between optimality and efficiency,
-        and thus it will not perform all possible syntactic reduction. For the best result,
+        and thus it will not perform all possible syntactic reduction. To obtain more reduced cofibrations,
         use only smart constructors (instead of raw constructors) to build cofibrations.
     *)
     val join : cof list -> cof
@@ -67,11 +67,11 @@ sig
         See {!val:join}. *)
     val meet : cof list -> cof
 
-    (** [boundary r] gives a cofibration equivalent to [join [eq0 r; eq1 r]] *)
+    (** [boundary r] gives a cofibration equivalent to [join [eq0 r; eq1 r]]. *)
     val boundary : dim -> cof
 
     (** [forall (r, cof)] computes [forall r. cof], using the syntactic quantifier elimination
-        and potentially other simplification used in {!val:eq}, {!val:join}, and {!val:meet}. *)
+        and potentially other simplification procedures used in {!val:eq}, {!val:join}, and {!val:meet}. *)
     val forall : dim * cof -> cof
   end
 
