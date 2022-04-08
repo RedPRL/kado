@@ -7,10 +7,10 @@ sig
   (** The type of cofibration variables. *)
   type var
 
-  (** The point 0 in the interval algebra. *)
+  (** The element 0 in the interval algebra. *)
   val dim0 : dim
 
-  (** The point 1 in the interval algebra. *)
+  (** The element 1 in the interval algebra. *)
   val dim1 : dim
 
   (** Comparator for elements of the interval algebra. *)

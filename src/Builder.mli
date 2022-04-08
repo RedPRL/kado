@@ -11,11 +11,14 @@ sig
     (** The type that embeds cofibrations. *)
     type cof
 
-    (** The point 0 in the interval algebra. *)
+    (** The element 0 in the interval algebra. *)
     val dim0 : dim
 
-    (** The point 1 in the interval algebra. *)
+    (** The element 1 in the interval algebra. *)
     val dim1 : dim
+
+    (** Equality checker for elements of the interval algebra. *)
+    val equal_dim : dim -> dim -> bool
 
     (** The embedding of cofibrations to [cof]. *)
     val cof : (dim, cof) Syntax.endo -> cof
@@ -57,6 +60,10 @@ sig
 
     (** [boundary r] gives a cofibration equivalent to [join [eq r dim0; eq r dim1]] *)
     val boundary : dim -> cof
+
+    (** [forall (r, cof)] computes [forall r. cof], using the syntactic quantifier elimination
+        and potentially other simplification used in {!val:eq}, {!val:join}, and {!val:meet}. *)
+    val forall : dim * cof -> cof
   end
 
   (** The implementation of smart constructors. *)
@@ -76,11 +83,14 @@ sig
     (** The type of cofibration variables. *)
     type var
 
-    (** The point 0 in the interval algebra. *)
+    (** The element 0 in the interval algebra. *)
     val dim0 : dim
 
-    (** The point 1 in the interval algebra. *)
+    (** The element 1 in the interval algebra. *)
     val dim1 : dim
+
+    (** Equality checker for elements of the interval algebra. *)
+    val equal_dim : dim -> dim -> bool
   end
 
   (** The signature of smart constructors. *)

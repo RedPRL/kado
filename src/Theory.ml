@@ -52,7 +52,7 @@ struct
 
   module UF = DisjointSet.Make (struct type t = dim let compare = compare_dim end)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
-  module B = Builder.Free.Make (P)
+  module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare x y) 0 end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =

@@ -6,6 +6,7 @@ struct
     type cof
     val dim0 : dim
     val dim1 : dim
+    val equal_dim : dim -> dim -> bool
     val cof : (dim, cof) Syntax.endo -> cof
     val uncof : cof -> (dim, cof) Syntax.endo option
   end
@@ -20,6 +21,7 @@ struct
     val join : cof list -> cof
     val meet : cof list -> cof
     val boundary : dim -> cof
+    val forall : dim * cof -> cof
   end
 
   module Make (P : Param) : S with type dim = P.dim and type cof = P.cof =
@@ -30,6 +32,7 @@ struct
     type nonrec cof = cof
 
     let eq x y = cof @@
+      let (=) = equal_dim in
       if x = y then
         Syntax.Endo.top
       else if (x = dim0 && y = dim1) || (x = dim1 && y = dim0) then
@@ -61,6 +64,22 @@ struct
         | l -> cof @@ Syntax.Endo.meet l
 
     let boundary r = join [eq r dim0; eq r dim1]
+
+    let forall (sym, cof) =
+      let rec go cof =
+        match uncof cof with
+        | None -> cof
+        | Some Eq (x, y) ->
+          begin
+            match equal_dim x sym, equal_dim y sym with
+            | true, true -> top
+            | true, false | false, true -> bot
+            | _ -> eq x y
+          end
+        | Some Meet phis -> meet @@ List.map go phis
+        | Some Join phis -> join @@ List.map go phis
+      in
+      go cof
   end
 end
 
@@ -72,6 +91,7 @@ struct
     type var
     val dim0 : dim
     val dim1 : dim
+    val equal_dim : dim -> dim -> bool
   end
 
   module type S =
