@@ -17,6 +17,8 @@ struct
     type cof
     val cof : (dim, cof) Syntax.endo -> cof
     val eq : dim -> dim -> cof
+    val eq0 : dim -> cof
+    val eq1 : dim -> cof
     val bot : cof
     val top : cof
     val join : cof list -> cof
@@ -37,6 +39,24 @@ struct
         Syntax.Endo.bot
       else
         Syntax.Endo.eq x y
+
+    let eq0 x = cof @@
+      let (=) = equal_dim in
+      if x = dim0 then
+        Syntax.Endo.top
+      else if x = dim1 then
+        Syntax.Endo.bot
+      else
+        Syntax.Endo.eq x dim0
+
+    let eq1 x = cof @@
+      let (=) = equal_dim in
+      if x = dim1 then
+        Syntax.Endo.top
+      else if x = dim0 then
+        Syntax.Endo.bot
+      else
+        Syntax.Endo.eq x dim1
 
     let bot = cof Syntax.Endo.bot
     let top = cof Syntax.Endo.top
