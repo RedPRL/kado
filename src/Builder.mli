@@ -36,13 +36,16 @@ sig
     (** The type that embeds cofibrations. *)
     type cof
 
+    (** The embedding of cofibrations to [cof]. *)
+    val cof : (dim, cof) Syntax.endo -> cof
+
     (** Smarter version of {!val:Syntax.Endo.eq} that checks equality. *)
     val eq : dim -> dim -> cof
 
-    (** Smarter version of {!val:Syntax.Endo.bot} that is actually the same. *)
+    (** The bottom cofibration. *)
     val bot : cof
 
-    (** Smarter version of {!val:Syntax.Endo.top} that is actually the same. *)
+    (** The top cofibration. *)
     val top : cof
 
     (** Smarter version of {!val:Syntax.Endo.join} that simplifies cofibrations using syntactic criteria.
@@ -104,6 +107,9 @@ sig
 
     (** The type of freely constructed cofibrations. *)
     type cof = (dim, var) Syntax.free
+
+    (** Alias of {!val:Syntax.Free.var}. *)
+    val var : var -> cof
 
     (** @open *)
     include Endo.S with type dim := dim and type cof := cof

@@ -15,6 +15,7 @@ struct
   sig
     type dim
     type cof
+    val cof : (dim, cof) Syntax.endo -> cof
     val eq : dim -> dim -> cof
     val bot : cof
     val top : cof
@@ -26,10 +27,7 @@ struct
 
   module Make (P : Param) : S with type dim = P.dim and type cof = P.cof =
   struct
-    open P
-
-    type nonrec dim = dim
-    type nonrec cof = cof
+    include P
 
     let eq x y = cof @@
       let (=) = equal_dim in
@@ -100,6 +98,7 @@ struct
     type var
     type cof = (dim, var) Syntax.free
 
+    val var : var -> cof
     include Endo.S with type dim := dim and type cof := cof
   end
 
@@ -107,6 +106,7 @@ struct
   struct
     open Syntax.Free
 
+    let var = var
     module P = struct
       include P
       type cof = (dim, var) Syntax.free
