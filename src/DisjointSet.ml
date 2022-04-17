@@ -9,6 +9,10 @@ sig
   val test_and_union : key -> key -> t -> bool * t
 
   val merge : t -> t -> t
+
+  type finger
+  val finger : key -> t -> finger
+  val test_finger : key -> finger -> bool
 end
 
 module Make (O : Map.OrderedType) : S with type key = O.t =
@@ -68,4 +72,22 @@ struct
     snd @@ test_and_union x y h
 
   let merge h1 h2 = M.fold union h2.parent h1
+
+  type finger =
+    { root : key
+    ; parent : key M.t
+    }
+
+  let finger k t =
+    { root = root k t
+    ; parent = t.parent
+    }
+
+  let test_finger k {root; parent} =
+    let rec loop x =
+      match M.find_opt x parent with
+      | Some x -> (loop[@tailcall]) x
+      | None -> O.compare x root = 0
+    in
+    loop k
 end
