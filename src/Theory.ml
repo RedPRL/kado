@@ -342,21 +342,28 @@ struct
       List.map thy ~f:(fun (thy', _) -> `Consistent thy')
 
     (* XXX: this function was never profiled *)
+    let tri_test_eq thy (x, y) =
+      let has_true = ref false in
+      let has_indet = ref false in
+      let has_false = ref false in
+      let () = List.iter thy ~f:(fun (thy', _) ->
+          match Alg.tri_test_eq thy' (x, y) with
+          | `True -> has_true := true
+          | `False -> has_false := true
+          | `Indeterminate -> has_indet := true)
+      in
+      match !has_true, !has_indet, !has_false with
+      | _, true, _ | true, _, true -> `Indeterminate
+      | _, false, false -> `True
+      | false, false, _ -> `False
+
+    (* XXX: this function was never profiled *)
     let simplify_cof thy cof =
       let simplify_eq (x, y) =
-        let has_true = ref false in
-        let has_indet = ref false in
-        let has_false = ref false in
-        let () = List.iter thy ~f:(fun (thy', _) ->
-            match Alg.tri_test_eq thy' (x, y) with
-            | `True -> has_true := true
-            | `False -> has_false := true
-            | `Indeterminate -> has_indet := true)
-        in
-        match !has_true, !has_indet, !has_false with
-        | _, true, _ | true, _, true -> Free.eq x y
-        | _, false, false -> Free.top
-        | false, false, _ -> Free.bot
+        match tri_test_eq thy (x, y) with
+        | `True -> Free.top
+        | `False -> Free.bot
+        | `Indeterminate -> Free.eq x y
       in
       let simplify_var v =
         if List.for_all thy ~f:(fun (thy', _) -> Alg.test_var thy' v) then
