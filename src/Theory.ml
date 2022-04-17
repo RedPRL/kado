@@ -38,6 +38,7 @@ sig
     val envelope_alg : Alg.t -> t
     val decompose : t -> Alg.t list
     val simplify_cof : t -> cof -> cof
+    val forall_cof : t -> dim * cof -> cof
     val meet2 : t -> t -> t
   end
 end
@@ -236,6 +237,10 @@ struct
       | Var v ->
         test_var thy' v
 
+    let finger thy sym : UF.finger = UF.finger sym thy.classes
+
+    let test_finger f r = UF.test_finger r f
+
     (* XXX: this function was never profiled *)
     let meet2' thy'1 thy'2 =
       let thy' =
@@ -377,6 +382,30 @@ struct
           simplify_eq (x, y)
         | Var v ->
           simplify_var v
+        | Cof Join phis ->
+          B.join @@ List.map ~f:go phis
+        | Cof Meet phis ->
+          B.meet @@ List.map ~f:go phis
+      in
+      go cof
+
+    (* XXX: this function was never profiled *)
+    let forall_cof thy (sym, cof) =
+      let fingers = List.map thy ~f:(fun (thy', _) -> Alg.finger thy' sym) in
+      let forall_eq (x, y) =
+        match
+          List.for_all fingers ~f:(fun f -> Alg.test_finger f x),
+          List.for_all fingers ~f:(fun f -> Alg.test_finger f y)
+        with
+        | true, true -> Free.top
+        | true, _ | _, true -> Free.bot
+        | _ -> Free.eq x y
+      in
+      let rec go =
+        function
+        | Cof Eq (x, y) ->
+          forall_eq (x, y)
+        | Var v -> Var v
         | Cof Join phis ->
           B.join @@ List.map ~f:go phis
         | Cof Meet phis ->

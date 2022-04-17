@@ -91,6 +91,14 @@ sig
         Also, the simplification is an expensive process and should be used wisely. *)
     val simplify_cof : t -> cof -> cof
 
+    (** [forall_cof thy (r, cof)] computes [forall r. cof] with respect to the equations in the theory [thy],
+        using the syntactic quantifier elimination and potentially other simplification procedures
+        used in {!val:eq}, {!val:join}, and {!val:meet}. This is slower than {!val:Builder.Echo.S.forall}
+        which does not take equations into consideration.
+
+        Note: this is experimental and might be removed if it turns out that we do not need it. *)
+    val forall_cof : t -> dim * cof -> cof
+
     (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2].
         This is useful for supporting compilation units with top-level cofibration declarations. *)
     val meet2 : t -> t -> t
