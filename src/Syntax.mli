@@ -15,7 +15,10 @@ type ('r, 'v) free =
 module Endo :
 sig
   (** A family of polynomial endofunctors [('r, -) t] indexed in an interpretation of the interval algebra ['r].
-      This is for multiple types (for example, abstract syntax) to {i embed} the langauge of cofibrations. *)
+      This is for multiple types (for example, abstract syntax) to {i embed} the langauge of cofibrations.
+
+      @canonical Kado.Syntax.endo
+  *)
   type ('r, 'a) t = ('r, 'a) endo =
     | Eq of 'r * 'r
     | Join of 'a list
@@ -36,6 +39,9 @@ sig
   (** [top] is [Meet []] *)
   val top : ('r, 'a) t
 
+  (** [map] is the functoriality of the endo functor [('r, -) t]. *)
+  val map : ('a -> 'b) -> ('r, 'a) t -> ('r, 'b) t
+
   (** Ugly printer. *)
   val dump :
     (Format.formatter -> 'r -> unit) ->
@@ -47,14 +53,20 @@ end
 module Free :
 sig
   (** A family of polynomial endofunctors [('r, -) t] indexed in an interpretation of the interval algebra ['r].
-      This is for multiple types (for example, abstract syntax) to {i embed} the langauge of cofibrations. *)
+      This is for multiple types (for example, abstract syntax) to {i embed} the langauge of cofibrations.
+
+      @canonical Kado.Syntax.endo
+  *)
   type nonrec ('r, 'a) endo = ('r, 'a) endo =
     | Eq of 'r * 'r
     | Join of 'a list
     | Meet of 'a list
 
   (** For each interval algebra ['r], we define the {i free monad} [('r, -) t] on the polynomial endofunctor [('r, -) endo]:
-      each [('r, 'v) t] is the language of cofibrations over an interval algebra ['r], with indeterminates drawn from ['v]. *)
+      each [('r, 'v) t] is the language of cofibrations over an interval algebra ['r], with indeterminates drawn from ['v].
+
+      @canonical Kado.Syntax.free
+  *)
   type ('r, 'v) t = ('r, 'v) free =
     | Cof of ('r, ('r, 'v) t) endo
     | Var of 'v

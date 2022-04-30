@@ -22,6 +22,12 @@ struct
 
   let eq x y = Eq (x, y)
 
+  let map f =
+    function
+    | Eq _ as phi -> phi
+    | Join l -> Join (List.map f l)
+    | Meet l -> Meet (List.map f l)
+
   let dump dump_r dump_a fmt =
     function
     | Eq (r1, r2) ->

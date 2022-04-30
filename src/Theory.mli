@@ -93,7 +93,7 @@ sig
 
     (** [forall_cof thy (r, cof)] computes [forall r. cof] with respect to the equations in the theory [thy],
         using the syntactic quantifier elimination and potentially other simplification procedures
-        used in {!val:eq}, {!val:join}, and {!val:meet}. This is slower than {!val:Builder.Echo.S.forall}
+        used in {!val:Builder.Endo.S.eq}, {!val:Builder.Endo.S.join}, and {!val:Builder.Endo.S.meet}. This is slower than {!val:Builder.Endo.S.forall}
         which does not take equations into consideration.
 
         Note: this is experimental and might be removed if it turns out that we do not need it. *)
