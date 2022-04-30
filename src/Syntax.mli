@@ -5,7 +5,7 @@ type ('r, 'a) endo =
   | Join of 'a list
   | Meet of 'a list
 
-(** For each interval algebra ['r], we define the {i free monad} [('r, -) t] on the polynomial endofunctor [('r, -) endo]:
+(** For each interval algebra ['r], we define the {i free monad} [('r, -) free] on the polynomial endofunctor [('r, -) endo]:
     each [('r, 'v) t] is the language of cofibrations over an interval algebra ['r], with indeterminates drawn from ['v]. *)
 type ('r, 'v) free =
   | Cof of ('r, ('r, 'v) free) endo

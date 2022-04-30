@@ -111,7 +111,7 @@ sig
     (** The type of cofibration variables. *)
     type var
 
-    (** The type of freely constructed cofibrations. *)
+    (** The type of freely generated cofibrations. *)
     type cof = (dim, var) Syntax.free
 
     (** Alias of {!val:Syntax.Free.var}. *)
