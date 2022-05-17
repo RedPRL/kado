@@ -60,17 +60,15 @@ struct
     let equal r s = compare_dim r s == 0
   end
 
-  module G = Graph.Persistent.Digraph.ConcreteBidirectional (Vertex)
-  module PathCheck = Graph.Path.Check (G)
-
+  module G = Graph.Persistent.Digraph.Concrete (Vertex)
+  module O = Graph.Oper.P (G)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
   module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare x y) 0 end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
     { dgraph : G.t;
-      (** equivalence classes of dimensions *)
-
+      dgraph_clos : G.t;
       true_vars : VarSet.t
     }
 
@@ -130,6 +128,7 @@ struct
 
     let emp' =
       {dgraph = G.empty;
+       dgraph_clos = G.empty;
        true_vars = VarSet.empty}
 
     let empty =
@@ -144,8 +143,7 @@ struct
       {thy with true_vars = VarSet.union vars thy.true_vars}
 
     let test_lt (thy : t') (r, s) =
-      let checker = PathCheck.create thy.dgraph in 
-      PathCheck.check_path checker r s
+      G.mem_edge thy.dgraph_clos r s
 
     let test_eq (thy : t') (r, s) =
       test_lt thy (r, s) && test_lt thy (s, r)
@@ -155,7 +153,7 @@ struct
     let unsafe_test_and_assume_lt thy (r,s) =
       if test_lt thy (r, s) then 
         true, thy 
-      else 
+      else
         let dgraph' = G.add_edge thy.dgraph r s in 
         false, {thy with dgraph = dgraph'}
 
@@ -175,6 +173,8 @@ struct
         | false, thy' -> thy', Snoc (atoms, atom)
       in
       let thy', atoms = List.fold_left ~f:go ~init:(thy, Emp) atoms in
+      let tclos = O.transitive_closure ~reflexive:true thy'.dgraph in 
+      let thy' = {thy' with dgraph_clos = tclos} in
       match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
       | false -> `Consistent (thy', BwdLabels.to_list atoms)
@@ -226,9 +226,11 @@ struct
 
     (* XXX: this function was never profiled *)
     let meet2' thy'1 thy'2 =
-      let module O = Graph.Oper.P (G) in 
+      let dgraph = O.union thy'1.dgraph thy'2.dgraph in 
+      let tclos = O.transitive_closure ~reflexive:true dgraph in 
       let thy' =
-        {dgraph = O.union thy'1.dgraph thy'2.dgraph;
+        {dgraph = dgraph; 
+         dgraph_clos = tclos;
          true_vars = VarSet.union thy'1.true_vars thy'2.true_vars}
       in
       match test_eq thy' (P.dim0, P.dim1) with
