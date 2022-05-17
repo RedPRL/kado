@@ -43,6 +43,7 @@ sig
   end
 end
 
+
 module Make (P : Param) : S with type dim = P.dim and type var = P.var =
 struct
   include P
@@ -51,22 +52,32 @@ struct
 
   type cof = (dim, var) free
 
-  module UF = DisjointSet.Make (struct type t = dim let compare = compare_dim end)
+  module Vertex = 
+  struct
+    type t = dim
+    let compare = compare_dim
+    let hash = Hashtbl.hash
+    let equal r s = compare_dim r s == 0
+  end
+
+  module G = Graph.Persistent.Digraph.ConcreteBidirectional (Vertex)
+  module PathCheck = Graph.Path.Check (G)
+
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
   module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare x y) 0 end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
-    { classes : UF.t;
+    { dgraph : G.t;
       (** equivalence classes of dimensions *)
 
       true_vars : VarSet.t
     }
 
-  type eq = dim * dim
+  type atom = LT of dim * dim
 
   (** A [branch] represents the meet of a bunch of atomic cofibrations. *)
-  type branch = VarSet.t * eq list
+  type branch = VarSet.t * atom list
   type branches = branch list
 
   (** A [cached_branch] is a [branch] together with an algebraic theory
@@ -96,7 +107,7 @@ struct
       match cof with
       | Var v ->
         List.map (dissect_cofibrations cofs)
-          ~f:(fun (vars, eqs) -> VarSet.add v vars, eqs)
+          ~f:(fun (vars, atoms) -> VarSet.add v vars, atoms)
       | Cof cof ->
         match cof with
         | Meet meet_cofs ->
@@ -104,9 +115,13 @@ struct
         | Join join_cofs ->
           List.concat_map join_cofs
             ~f:(fun join_cof -> dissect_cofibrations @@ join_cof :: cofs)
+        | Lt (r, s) ->
+          List.map (dissect_cofibrations cofs)
+            ~f:(fun (vars, atoms) -> vars, LT (r, s) :: atoms)
         | Eq (r, s) ->
           List.map (dissect_cofibrations cofs)
-            ~f:(fun (vars, eqs) -> vars, (r, s) :: eqs)
+            ~f:(fun (vars, atoms) -> vars, LT (s, r) :: LT (r, s) :: atoms)
+
 
   module Alg =
   struct
@@ -114,7 +129,7 @@ struct
     type t' = alg_thy'
 
     let emp' =
-      {classes = UF.empty;
+      {dgraph = G.empty;
        true_vars = VarSet.empty}
 
     let empty =
@@ -128,88 +143,59 @@ struct
     let assume_vars (thy : t') vars =
       {thy with true_vars = VarSet.union vars thy.true_vars}
 
+    let test_lt (thy : t') (r, s) =
+      let checker = PathCheck.create thy.dgraph in 
+      PathCheck.check_path checker r s
+
     let test_eq (thy : t') (r, s) =
-      UF.test r s thy.classes
+      test_lt thy (r, s) && test_lt thy (s, r)
 
-    (** [unsafe_test_and_assume_eq] fuses [test_eq] and [assume_eq] (if there was one).
+    (** [unsafe_test_and_assume_lt] fuses [test_lt] and [assume_lt] (if there was one).
       * It is "unsafe" because we do not check consistency here. *)
-    let unsafe_test_and_assume_eq (thy : t') (r, s) =
-      let testing, classes = UF.test_and_union r s thy.classes in
-      testing, {thy with classes}
-
-    let tri_test_eq thy (x, y) =
-      match unsafe_test_and_assume_eq thy (x, y) with
-      | true, _ -> `True
-      | false, thy' ->
-        if test_eq thy' (P.dim0, P.dim1) then
-          `False
-        else
-          `Indeterminate
-
-    let test_eqs (thy : t') eqs =
-      List.for_all ~f:(test_eq thy) eqs
+    let unsafe_test_and_assume_lt thy (r,s) =
+      if test_lt thy (r, s) then 
+        true, thy 
+      else 
+        let dgraph' = G.add_edge thy.dgraph r s in 
+        false, {thy with dgraph = dgraph'}
 
     let test_var (thy : t') v =
       VarSet.mem v thy.true_vars
-
-    let test_vars (thy : t') vs =
-      VarSet.subset vs thy.true_vars
-
-    let test_branch (thy : t') (vars, eqs) =
-      test_vars thy vars && test_eqs thy eqs
 
     (** [reduced_vars] takes out redundant cofibration variables. *)
     let reduce_vars (thy : t') vars =
       VarSet.diff vars thy.true_vars
 
-    (** [reduce_eqs] detects inconsistency of an equation set and takes out
+    (** [reduce_atoms] detects inconsistency of an equation set and takes out
       * redundant equations. *)
-    let reduce_eqs (thy : t') eqs =
-      let go ((thy', eqs) as acc) eq =
-        match unsafe_test_and_assume_eq thy' eq with
+    let reduce_atoms (thy : t') atoms =
+      let go ((thy', atoms) as acc) (LT (r,s) as atom) =
+        match unsafe_test_and_assume_lt thy' (r,s) with
         | true, _ -> acc
-        | false, thy' -> thy', Snoc (eqs, eq)
+        | false, thy' -> thy', Snoc (atoms, atom)
       in
-      let thy', eqs = List.fold_left ~f:go ~init:(thy, Emp) eqs in
+      let thy', atoms = List.fold_left ~f:go ~init:(thy, Emp) atoms in
       match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
-      | false -> `Consistent (thy', BwdLabels.to_list eqs)
+      | false -> `Consistent (thy', BwdLabels.to_list atoms)
 
     (** [reduce_branch] detects inconsistency of a branch and takes out redundant
       * cofibration variables and equations. *)
-    let reduce_branch (thy' : t') (vars, eqs) =
-      match reduce_eqs thy' eqs with
+    let reduce_branch (thy' : t') (vars, atoms) =
+      match reduce_atoms thy' atoms with
       | `Inconsistent -> `Inconsistent
-      | `Consistent (thy', eqs) ->
-        `Consistent (assume_vars thy' vars, (reduce_vars thy' vars, eqs))
+      | `Consistent (thy', atoms) ->
+        `Consistent (assume_vars thy' vars, (reduce_vars thy' vars, atoms))
 
     (** [reduce_branches] removes inconsistent branches and takes out redundant
       * cofibration variables and equations. *)
-    let reduce_branches (thy' : t') branches : cached_branches =
+    let reduce_branches (thy' : t') (branches : branches) : cached_branches =
       let go branch =
         match reduce_branch thy' branch with
         | `Inconsistent -> None
         | `Consistent (thy', branch) -> Some (thy', branch)
       in
       List.filter_map ~f:go branches
-
-    (** [drop_useless_branches] drops the branches that could be dropped without
-      * affecting the coverages. *)
-    let drop_useless_branches cached_branches : cached_branches =
-      let go_fwd acc (thy', branch) =
-        if BwdLabels.exists ~f:(fun (_, branch) -> test_branch thy' branch) acc then
-          acc
-        else
-          Snoc (acc, (thy', branch))
-      in
-      let cached_branches = List.fold_left ~f:go_fwd ~init:Emp cached_branches in
-      let go_bwd (thy', branch) acc =
-        if List.exists ~f:(fun (_, branch) -> test_branch thy' branch) acc then
-          acc
-        else
-          (thy', branch) :: acc
-      in
-      BwdLabels.fold_right ~f:go_bwd cached_branches ~init:[]
 
     (** [split] combines all the optimizers above to split an algebraic theory
       * into multiple ones induced by the input cofibration context. *)
@@ -222,7 +208,6 @@ struct
         | [vars, []] when VarSet.is_empty vars -> [`Consistent thy']
         | dissected_cofs ->
           List.map ~f:(fun (thy', _) -> `Consistent thy') @@
-          drop_useless_branches @@
           reduce_branches thy' dissected_cofs
 
     (** [test] checks whether a cofibration is true within an algebraic theory *)
@@ -230,6 +215,8 @@ struct
       function
       | Cof Eq (r, s) ->
         test_eq thy' (r, s)
+      | Cof Lt (r, s) -> 
+        test_lt thy' (r, s)
       | Cof Join phis ->
         List.exists ~f:(test thy') phis
       | Cof Meet phis ->
@@ -237,14 +224,11 @@ struct
       | Var v ->
         test_var thy' v
 
-    let finger thy sym : UF.finger = UF.finger sym thy.classes
-
-    let test_finger f r = UF.test_finger r f
-
     (* XXX: this function was never profiled *)
     let meet2' thy'1 thy'2 =
+      let module O = Graph.Oper.P (G) in 
       let thy' =
-        {classes = UF.merge thy'1.classes thy'2.classes;
+        {dgraph = O.union thy'1.dgraph thy'2.dgraph;
          true_vars = VarSet.union thy'1.true_vars thy'2.true_vars}
       in
       match test_eq thy' (P.dim0, P.dim1) with
@@ -278,47 +262,6 @@ struct
       | [] -> `Inconsistent
       | _ -> `Consistent
 
-    (** [refactor_branches] attempts to identify common parts of the branches
-      * and shrink the labels. Recall that we do not keep the common ancestor
-      * but the paths (as a collection of atomic cofibrations) from the common
-      * ancestor, and thus what are changed here are the paths.
-      *
-      * This optimization seems to be expensive, but it seems to help after
-      * we switched from the persistant tables (using [Hashtbl]) to [Map].
-    *)
-    let refactor_branches cached_branches : t =
-      let common_vars =
-        let go vars0 (_, (vars1, _)) = VarSet.inter vars0 vars1 in
-        match cached_branches with
-        | [] -> VarSet.empty
-        | (_, (vars, _)) :: branches -> List.fold_left ~f:go ~init:vars branches
-      in
-      (* The following is checking whether individual equations are useful (not shared
-       * by all the algebraic theories). It does not kill every "useless" equation where
-       * the uselessness can be only observed after looking at multiple equations.
-       * Here is one example:
-       *
-       * branch 1: r=0
-       * branch 2: r=i, i=0
-       *
-       * r=0 will be factored out, but then i=0 should have also been removed. The code
-       * would not remove i=0. Here is a more complicated example:
-       *
-       * branch 1: r=i, i=0
-       * branch 2: r=j, j=0
-       *
-       * Both i=0 and j=0 should be factored out, but the following code is not smart
-       * enough to detect them. One could consider more aggressive approaches if [CofThy]
-       * becomes the bottleneck again.
-      *)
-      let useful eq =
-        List.exists cached_branches
-          ~f:(fun (thy', _) -> not @@ Alg.test_eq thy' eq)
-      in
-      (* revisit all branches and remove all useless ones identified by the simple criterion above. *)
-      List.map cached_branches
-        ~f:(fun (thy', (vars, eqs)) -> thy', (VarSet.diff vars common_vars, List.filter ~f:useful eqs))
-
     (** [split thy cofs] adds to the theory [thy] the conjunction of a list of cofibrations [cofs]
       * and calculate the branches accordingly. This is similar to [Alg.split] in the spirit but
       * differs in detail. *)
@@ -327,17 +270,16 @@ struct
       | [] -> []
       | [vars, []] when VarSet.is_empty vars -> thy
       | dissected_cofs ->
-        Alg.drop_useless_branches @@
         List.concat_map thy
           ~f:(fun (thy', (vars, eq)) ->
               List.map (Alg.reduce_branches thy' dissected_cofs)
-                ~f:(fun (thy', (sub_vars, sub_eqs)) ->
-                    thy', (VarSet.union vars sub_vars, eq @ sub_eqs)))
+                ~f:(fun (thy', (sub_vars, sub_atoms)) ->
+                    thy', (VarSet.union vars sub_vars, eq @ sub_atoms)))
 
     (** [assume thy cofs] is the same as [split thy cofs] except that it further refactors the
       * branches to optimize future searching. *)
     let assume (thy : t) (cofs : cof list) : t =
-      refactor_branches @@ split thy cofs
+      split thy cofs
 
     let test_sequent thy cx cof =
       List.for_all ~f:(fun (thy', _) -> Alg.test thy' cof) @@
@@ -346,30 +288,18 @@ struct
     let decompose thy =
       List.map thy ~f:(fun (thy', _) -> `Consistent thy')
 
-    (* XXX: this function was never profiled *)
-    let tri_test_eq thy (x, y) =
+    let test_eq thy (x, y) =
       let has_true = ref false in
-      let has_indet = ref false in
-      let has_false = ref false in
-      let () = List.iter thy ~f:(fun (thy', _) ->
-          match Alg.tri_test_eq thy' (x, y) with
-          | `True -> has_true := true
-          | `False -> has_false := true
-          | `Indeterminate -> has_indet := true)
+      let () = 
+        List.iter thy ~f:(fun (thy', _) ->
+            match Alg.test_eq thy' (x, y) with
+            | true -> has_true := true
+            | _ -> ())
       in
-      match !has_true, !has_indet, !has_false with
-      | _, true, _ | true, _, true -> `Indeterminate
-      | _, false, false -> `True
-      | false, false, _ -> `False
+      !has_true 
 
     (* XXX: this function was never profiled *)
     let simplify_cof thy cof =
-      let simplify_eq (x, y) =
-        match tri_test_eq thy (x, y) with
-        | `True -> Free.top
-        | `False -> Free.bot
-        | `Indeterminate -> Free.eq x y
-      in
       let simplify_var v =
         if List.for_all thy ~f:(fun (thy', _) -> Alg.test_var thy' v) then
           Free.top
@@ -379,7 +309,9 @@ struct
       let rec go =
         function
         | Cof Eq (x, y) ->
-          simplify_eq (x, y)
+          B.eq x y
+        | Cof Lt (x, y) ->
+          B.lt x y
         | Var v ->
           simplify_var v
         | Cof Join phis ->
@@ -391,20 +323,26 @@ struct
 
     (* XXX: this function was never profiled *)
     let forall_cof thy (sym, cof) =
-      let fingers = List.map thy ~f:(fun (thy', _) -> Alg.finger thy' sym) in
       let forall_eq (x, y) =
-        match
-          List.for_all fingers ~f:(fun f -> Alg.test_finger f x),
-          List.for_all fingers ~f:(fun f -> Alg.test_finger f y)
-        with
-        | true, true -> Free.top
-        | true, _ | _, true -> Free.bot
-        | _ -> Free.eq x y
+        match test_eq thy (sym, x), test_eq thy (sym, y) with 
+        | true, true -> B.top
+        | false, false -> B.eq x y
+        | _ -> B.bot
+      in
+      let forall_lt (x, y) = 
+        match test_eq thy (sym, x) with 
+        | true -> B.eq x P.dim0
+        | _ ->
+          match test_eq thy (sym, y) with 
+          | true -> B.eq y P.dim1 
+          | _ -> B.lt x y
       in
       let rec go =
         function
         | Cof Eq (x, y) ->
           forall_eq (x, y)
+        | Cof Lt (x, y) -> 
+          forall_lt (x, y)
         | Var v -> Var v
         | Cof Join phis ->
           B.join @@ List.map ~f:go phis
@@ -416,16 +354,12 @@ struct
     (* XXX: this function was never profiled *)
     let meet2 (thy1 : t) (thy2 : t) : t =
       (* a correct but unoptimized theory *)
-      let draft =
-        List.concat_map thy1
-          ~f:(fun (thy'1, (vars1, eqs1)) ->
-              List.filter_map thy2
-                ~f:(fun (thy'2, (vars2, eqs2)) ->
-                    match Alg.meet2' thy'1 thy'2 with
-                    | `Inconsistent -> None
-                    | `Consistent thy' -> Some (thy', (VarSet.union vars1 vars2, eqs1 @ eqs2))))
-      in
-      (* potentially expensive optimization *)
-      refactor_branches @@ Alg.drop_useless_branches draft
+      List.concat_map thy1
+        ~f:(fun (thy'1, (vars1, atoms1)) ->
+            List.filter_map thy2
+              ~f:(fun (thy'2, (vars2, atoms2)) ->
+                  match Alg.meet2' thy'1 thy'2 with
+                  | `Inconsistent -> None
+                  | `Consistent thy' -> Some (thy', (VarSet.union vars1 vars2, atoms1 @ atoms2))))
   end
 end

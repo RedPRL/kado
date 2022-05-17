@@ -42,6 +42,8 @@ sig
     (** Smarter version of {!val:Syntax.Endo.eq} that checks equality. *)
     val eq : dim -> dim -> cof
 
+    val lt : dim -> dim -> cof
+
     (** [eq0 r] is [eq r dim0]. *)
     val eq0 : dim -> cof
 

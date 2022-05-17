@@ -2,6 +2,7 @@
     This is for multiple types (for example, abstract syntax) to {i embed} the langauge of cofibrations. *)
 type ('r, 'a) endo =
   | Eq of 'r * 'r
+  | Lt of 'r * 'r
   | Join of 'a list
   | Meet of 'a list
 
@@ -21,11 +22,15 @@ sig
   *)
   type ('r, 'a) t = ('r, 'a) endo =
     | Eq of 'r * 'r
+    | Lt of 'r * 'r
     | Join of 'a list
     | Meet of 'a list
 
   (** [eq x y] is [Eq (x, y)] *)
   val eq : 'r -> 'r -> ('r, 'a) t
+
+  (** [lt x y] is [Lt (x, y)] *)
+  val lt : 'r -> 'r -> ('r, 'a) t
 
   (** [join phis] is [Join phis] *)
   val join : 'a list -> ('r, 'a) t
@@ -59,6 +64,7 @@ sig
   *)
   type nonrec ('r, 'a) endo = ('r, 'a) endo =
     | Eq of 'r * 'r
+    | Lt of 'r * 'r
     | Join of 'a list
     | Meet of 'a list
 
@@ -79,6 +85,9 @@ sig
 
   (** [eq x y] is [Eq (x, y)] *)
   val eq : 'a -> 'a -> ('a, 'v) t
+
+  (** [lt x y] is [Lt (x, y)] *)
+  val lt : 'r -> 'r -> ('r, 'a) t
 
   (** [join phis] is [Cof (Join phis)] *)
   val join : ('a, 'v) t list -> ('a, 'v) t
