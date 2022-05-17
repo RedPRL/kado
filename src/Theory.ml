@@ -68,9 +68,12 @@ struct
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
     { dgraph : G.t;
-      dgraph_clos : G.t;
-      true_vars : VarSet.t
-    }
+      dgraph_clos : G.t Lazy.t;
+      true_vars : VarSet.t}
+
+  let make_alg_thy' ~dgraph ~true_vars = 
+    let dgraph_clos = lazy begin O.transitive_closure ~reflexive:true dgraph end in 
+    {dgraph; dgraph_clos; true_vars}
 
   type atom = LT of dim * dim
 
@@ -128,7 +131,7 @@ struct
 
     let emp' =
       {dgraph = G.empty;
-       dgraph_clos = G.empty;
+       dgraph_clos = lazy G.empty;
        true_vars = VarSet.empty}
 
     let empty =
@@ -143,7 +146,7 @@ struct
       {thy with true_vars = VarSet.union vars thy.true_vars}
 
     let test_lt (thy : t') (r, s) =
-      G.mem_edge thy.dgraph_clos r s
+      G.mem_edge (Lazy.force thy.dgraph_clos) r s
 
     let test_eq (thy : t') (r, s) =
       test_lt thy (r, s) && test_lt thy (s, r)
@@ -173,8 +176,7 @@ struct
         | false, thy' -> thy', Snoc (atoms, atom)
       in
       let thy', atoms = List.fold_left ~f:go ~init:(thy, Emp) atoms in
-      let tclos = O.transitive_closure ~reflexive:true thy'.dgraph in 
-      let thy' = {thy' with dgraph_clos = tclos} in
+      let thy' = make_alg_thy' ~true_vars:thy'.true_vars ~dgraph:thy'.dgraph in 
       match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
       | false -> `Consistent (thy', BwdLabels.to_list atoms)
@@ -227,12 +229,8 @@ struct
     (* XXX: this function was never profiled *)
     let meet2' thy'1 thy'2 =
       let dgraph = O.union thy'1.dgraph thy'2.dgraph in 
-      let tclos = O.transitive_closure ~reflexive:true dgraph in 
-      let thy' =
-        {dgraph = dgraph; 
-         dgraph_clos = tclos;
-         true_vars = VarSet.union thy'1.true_vars thy'2.true_vars}
-      in
+      let true_vars = VarSet.union thy'1.true_vars thy'2.true_vars in
+      let thy' = make_alg_thy' ~dgraph ~true_vars in 
       match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
       | false -> `Consistent thy'
