@@ -8,6 +8,8 @@ sig
   val has_path : vertex -> vertex -> t -> bool
 
   val union : t -> t -> t
+
+  val dump : (Format.formatter -> vertex -> unit) -> Format.formatter -> t -> unit
 end
 
 module Make (V : Map.OrderedType) : S with type vertex = V.t = 
@@ -51,31 +53,41 @@ struct
 
   end
 
+
+  let pp_comma fmt () = 
+    Format.fprintf fmt "," 
+
+  let dump dump_vertex fmt (gph : t) : unit =
+    Format.fprintf fmt "\n\n";
+    gph.closure |> M.iter @@ fun x xs ->
+    let xs = S.elements xs in 
+    Format.fprintf fmt "%a [%a]\n@." 
+      dump_vertex x
+      (Format.pp_print_list ~pp_sep:pp_comma dump_vertex) xs
+
   let insert x y gph =
     let gph = Prim.add_generator x y gph in
-    if has_path x y gph then gph else 
-      let rec loop bnds gph =
-        match bnds with 
-        | [] -> gph
-        | (z, _) :: bnds ->
-          if not (has_path z y gph) && has_path z y gph then
-            let _ = print_string "adsfaf\n" in 
-            let reds = [y] in
-            let gph = adapt z reds gph in
-            loop bnds gph
-          else 
-            loop bnds gph
 
-      and adapt z reds gph =
-        match reds with
-        | [] -> gph
-        | l :: reds ->
-          let gph = Prim.add_edge z l gph in 
-          let succs = S.elements @@ successors l gph in 
-          let reds = reds @ List.filter (fun m -> not (has_path z m gph)) succs in 
-          adapt z reds gph
-      in
-      loop (M.bindings gph.generators) gph
+    (* if has_path x y gph then gph else  *)
+    let rec loop bnds gph =
+      match bnds with 
+      | [] -> gph
+      | (z, _) :: bnds ->
+        let reds = [y] in
+        let gph = adapt z reds gph in
+        loop bnds gph
+
+    and adapt z reds gph =
+      match reds with
+      | [] -> gph
+      | l :: reds ->
+        let gph = Prim.add_edge z l gph in 
+        let succs = S.elements @@ successors l gph in 
+        let reds = reds @ List.filter (fun m -> not (has_path z m gph)) succs in 
+        adapt z reds gph
+    in
+    let gph = loop (M.bindings gph.generators) gph in 
+    gph
 
   let union (gph1 : t) (gph2 : t) : t =
     let rec loop bnds gph = 
@@ -92,4 +104,6 @@ struct
         loop' (S.elements ys) gph
     in 
     loop (M.bindings gph2.generators) gph1
+
+
 end
