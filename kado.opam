@@ -14,7 +14,6 @@ depends: [
   "dune" {>= "2.0"}
   "ocaml" {>= "4.10"}
   "bwd" {>= "1.0"}
-  "ocamlgraph" {>= "2.0.0"}
   "odoc" {with-doc}
 ]
 build: [
