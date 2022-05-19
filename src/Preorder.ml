@@ -48,7 +48,6 @@ struct
       {gph with closure = M.add x (S.add y (reachable_vertices x gph)) gph.closure} 
 
     let add_generator x y gph =
-      add_edge x y @@ 
       {gph with generators = M.add x (S.add y (reachable_vertices x gph)) gph.generators} 
 
   end
@@ -68,26 +67,29 @@ struct
   let insert x y gph =
     let gph = Prim.add_generator x y gph in
 
-    (* if has_path x y gph then gph else  *)
-    let rec loop bnds gph =
-      match bnds with 
-      | [] -> gph
-      | (z, _) :: bnds ->
-        let reds = [y] in
-        let gph = adapt z reds gph in
-        loop bnds gph
+    if has_path x y gph then 
+      let _ = print_string "had_path\n" in 
+      gph 
+    else 
+      let rec loop bnds gph =
+        match bnds with 
+        | [] -> gph
+        | (z, _) :: bnds ->
+          let reds = [y] in
+          let gph = adapt z reds gph in
+          loop bnds gph
 
-    and adapt z reds gph =
-      match reds with
-      | [] -> gph
-      | l :: reds ->
-        let gph = Prim.add_edge z l gph in 
-        let succs = S.elements @@ successors l gph in 
-        let reds = reds @ List.filter (fun m -> not (has_path z m gph)) succs in 
-        adapt z reds gph
-    in
-    let gph = loop (M.bindings gph.generators) gph in 
-    gph
+      and adapt z reds gph =
+        match reds with
+        | [] -> gph
+        | l :: reds ->
+          let gph = Prim.add_edge z l gph in 
+          let succs = S.elements @@ successors l gph in 
+          let reds = reds @ List.filter (fun m -> not (has_path z m gph)) succs in 
+          adapt z reds gph
+      in
+      let gph = loop (M.bindings gph.generators) gph in 
+      gph
 
   let union (gph1 : t) (gph2 : t) : t =
     let rec loop bnds gph = 
