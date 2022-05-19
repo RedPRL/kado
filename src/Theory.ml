@@ -58,13 +58,13 @@ struct
     let compare = compare_dim
   end
 
-  module Preorder = Preorder.Make (Vertex)
+  module K = Kusariyarou.Make (Vertex)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
   module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare x y) 0 end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
-    {preorder : Preorder.t;
+    {graph : K.t;
      true_vars : VarSet.t}
 
   type atom = LT of dim * dim
@@ -122,7 +122,7 @@ struct
     type t' = alg_thy'
 
     let emp' =
-      {preorder = Preorder.empty;
+      {graph = K.add_edge P.dim0 P.dim1 @@ K.add_vertex P.dim0 @@ K.add_vertex P.dim1 K.empty;
        true_vars = VarSet.empty}
 
     let empty =
@@ -137,7 +137,10 @@ struct
       {thy with true_vars = VarSet.union vars thy.true_vars}
 
     let test_lt (thy : t') (r, s) =
-      Preorder.has_path r s thy.preorder
+      if K.mem_vertex r thy.graph && K.mem_vertex s thy.graph then 
+        K.reachable r s thy.graph
+      else 
+        false
 
     let test_eq (thy : t') (r, s) =
       test_lt thy (r, s) && test_lt thy (s, r)
@@ -148,8 +151,11 @@ struct
       if test_lt thy (r, s) then 
         true, thy 
       else
-        let preorder' = Preorder.insert r s thy.preorder in
-        false, {thy with preorder = preorder'}
+        let graph = thy.graph in 
+        let graph = if K.mem_vertex r graph then graph else K.add_vertex r graph in 
+        let graph = if K.mem_vertex s graph then graph else K.add_vertex s graph in 
+        let graph = K.add_edge r s graph in 
+        false, {thy with graph}
 
     let test_var (thy : t') v =
       VarSet.mem v thy.true_vars
@@ -217,13 +223,16 @@ struct
         test_var thy' v
 
     (* XXX: this function was never profiled *)
-    let meet2' thy'1 thy'2 =
-      let preorder = Preorder.union thy'1.preorder thy'2.preorder in 
-      let true_vars = VarSet.union thy'1.true_vars thy'2.true_vars in
-      let thy' = {true_vars; preorder} in
-      match test_eq thy' (P.dim0, P.dim1) with
-      | true -> `Inconsistent
-      | false -> `Consistent thy'
+    let meet2' _thy'1 _thy'2 =
+      (* TODO: functionality not yet supported by library *)
+      failwith "TODO"
+
+    (* let preorder = Preorder.union thy'1.preorder thy'2.preorder in 
+       let true_vars = VarSet.union thy'1.true_vars thy'2.true_vars in
+       let thy' = {true_vars; preorder} in
+       match test_eq thy' (P.dim0, P.dim1) with
+       | true -> `Inconsistent
+       | false -> `Consistent thy' *)
 
     (* XXX: this function was never profiled *)
     let meet2 thy1 thy2 =
