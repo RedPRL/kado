@@ -56,24 +56,16 @@ struct
   struct
     type t = dim
     let compare = compare_dim
-    let hash = Hashtbl.hash
-    let equal r s = compare_dim r s == 0
   end
 
-  module G = Graph.Persistent.Digraph.Concrete (Vertex)
-  module O = Graph.Oper.P (G)
+  module Preorder = Preorder.Make (Vertex)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
   module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare x y) 0 end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
-    { dgraph : G.t;
-      dgraph_clos : G.t Lazy.t;
-      true_vars : VarSet.t}
-
-  let make_alg_thy' ~dgraph ~true_vars = 
-    let dgraph_clos = lazy begin O.transitive_closure ~reflexive:true dgraph end in 
-    {dgraph; dgraph_clos; true_vars}
+    {preorder : Preorder.t;
+     true_vars : VarSet.t}
 
   type atom = LT of dim * dim
 
@@ -130,8 +122,7 @@ struct
     type t' = alg_thy'
 
     let emp' =
-      {dgraph = G.empty;
-       dgraph_clos = lazy G.empty;
+      {preorder = Preorder.empty;
        true_vars = VarSet.empty}
 
     let empty =
@@ -146,7 +137,7 @@ struct
       {thy with true_vars = VarSet.union vars thy.true_vars}
 
     let test_lt (thy : t') (r, s) =
-      G.mem_edge (Lazy.force thy.dgraph_clos) r s
+      Preorder.has_path r s thy.preorder
 
     let test_eq (thy : t') (r, s) =
       test_lt thy (r, s) && test_lt thy (s, r)
@@ -157,8 +148,8 @@ struct
       if test_lt thy (r, s) then 
         true, thy 
       else
-        let dgraph' = G.add_edge thy.dgraph r s in 
-        false, {thy with dgraph = dgraph'}
+        let preorder' = Preorder.insert r s thy.preorder in
+        false, {thy with preorder = preorder'}
 
     let test_var (thy : t') v =
       VarSet.mem v thy.true_vars
@@ -176,7 +167,6 @@ struct
         | false, thy' -> thy', Snoc (atoms, atom)
       in
       let thy', atoms = List.fold_left ~f:go ~init:(thy, Emp) atoms in
-      let thy' = make_alg_thy' ~true_vars:thy'.true_vars ~dgraph:thy'.dgraph in 
       match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
       | false -> `Consistent (thy', BwdLabels.to_list atoms)
@@ -228,9 +218,9 @@ struct
 
     (* XXX: this function was never profiled *)
     let meet2' thy'1 thy'2 =
-      let dgraph = O.union thy'1.dgraph thy'2.dgraph in 
+      let preorder = Preorder.union thy'1.preorder thy'2.preorder in 
       let true_vars = VarSet.union thy'1.true_vars thy'2.true_vars in
-      let thy' = make_alg_thy' ~dgraph ~true_vars in 
+      let thy' = {true_vars; preorder} in
       match test_eq thy' (P.dim0, P.dim1) with
       | true -> `Inconsistent
       | false -> `Consistent thy'
