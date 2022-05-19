@@ -1,4 +1,4 @@
 (library
  (name Kado)
- (libraries bwd ocamlgraph)
+ (libraries bwd)
  (public_name kado))
