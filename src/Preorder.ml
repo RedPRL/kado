@@ -41,11 +41,14 @@ struct
 
   module Prim =
   struct 
-    let add_generator x y gph =
-      {gph with generators = M.add x (S.add y (reachable_vertices x gph)) gph.generators}  
 
     let add_edge x y gph = 
       {gph with closure = M.add x (S.add y (reachable_vertices x gph)) gph.closure} 
+
+    let add_generator x y gph =
+      add_edge x y @@ 
+      {gph with generators = M.add x (S.add y (reachable_vertices x gph)) gph.generators} 
+
   end
 
   let insert x y gph =
@@ -55,7 +58,8 @@ struct
         match bnds with 
         | [] -> gph
         | (z, _) :: bnds ->
-          if not (has_path z y gph) && has_path z y gph then 
+          if not (has_path z y gph) && has_path z y gph then
+            let _ = print_string "adsfaf\n" in 
             let reds = [y] in
             let gph = adapt z reds gph in
             loop bnds gph
@@ -71,7 +75,7 @@ struct
           let reds = reds @ List.filter (fun m -> not (has_path z m gph)) succs in 
           adapt z reds gph
       in
-      loop (M.bindings gph.closure) gph
+      loop (M.bindings gph.generators) gph
 
   let union (gph1 : t) (gph2 : t) : t =
     let rec loop bnds gph = 
