@@ -223,9 +223,9 @@ struct
         test_var thy' v
 
     (* XXX: this function was never profiled *)
-    let meet2' _thy'1 _thy'2 =
+    let meet2' _thy'1 thy'2 =
       (* TODO: functionality not yet supported by library *)
-      failwith "TODO"
+      `Consistent thy'2
 
     (* let preorder = Preorder.union thy'1.preorder thy'2.preorder in 
        let true_vars = VarSet.union thy'1.true_vars thy'2.true_vars in
