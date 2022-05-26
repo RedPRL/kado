@@ -14,11 +14,7 @@ depends: [
   "dune" {>= "2.0"}
   "ocaml" {>= "4.10"}
   "bwd" {>= "1.0"}
-  "kusariyarou" {= "~dev"}
   "odoc" {with-doc}
-]
-pin-depends: [
-  [ "kusariyarou.~dev" "git+https://github.com/jonsterling/kusariyarou#union" ]
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]

@@ -1,4 +1,4 @@
 (library
  (name Kado)
- (libraries bwd kusariyarou)
+ (libraries bwd)
  (public_name kado))
