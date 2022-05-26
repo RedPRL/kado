@@ -48,7 +48,7 @@ struct
         let f rx j = if S.mem j rx then rx else meld j (S.add j rx) in
         List.fold_left f rx (M.find i g.reduced)
       in
-      { reduced = M.update v (fun l -> Some (v :: Option.get l)) g.reduced;
+      { reduced = M.update u (fun l -> Some (v :: Option.get l)) g.reduced;
         reachable =
           g.reachable
           |> M.map @@ fun rx ->

@@ -125,7 +125,7 @@ struct
       {thy with true_vars = VarSet.union vars thy.true_vars}
 
     let test_le (thy : t') (r, s) =
-      Graph.test r s thy.le
+      compare_dim r dim0 = 0 || compare_dim s dim1 = 0 || Graph.test r s thy.le
 
     let test_inconsistent (thy' : t') = test_le thy' (P.dim1, P.dim0)
 
@@ -133,6 +133,7 @@ struct
       * It is "unsafe" because we do not check consistency here. *)
     let unsafe_test_and_assume_le (thy : t') (r, s) =
       let testing, le = Graph.test_and_union r s thy.le in
+      let testing = compare_dim r dim0 = 0 || compare_dim s dim1 = 0 || testing in
       testing, {thy with le}
 
     let tri_test_le thy (x, y) =
