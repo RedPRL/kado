@@ -161,7 +161,7 @@ struct
       VarSet.diff vars thy.true_vars
 
     (** [reduce_les] detects inconsistency of an inequality set and takes out
-      * redundant equations. *)
+      * redundant inequalities. *)
     let reduce_les (thy : t') les =
       let go ((thy', les) as acc) le =
         match unsafe_test_and_assume_le thy' le with
@@ -174,7 +174,7 @@ struct
       | false -> `Consistent (thy', BwdLabels.to_list les)
 
     (** [reduce_branch] detects inconsistency of a branch and takes out redundant
-      * cofibration variables and equations. *)
+      * cofibration variables and inequalities. *)
     let reduce_branch (thy' : t') (vars, les) =
       match reduce_les thy' les with
       | `Inconsistent -> `Inconsistent
@@ -182,7 +182,7 @@ struct
         `Consistent (assume_vars thy' vars, (reduce_vars thy' vars, les))
 
     (** [reduce_branches] removes inconsistent branches and takes out redundant
-      * cofibration variables and equations. *)
+      * cofibration variables and inequalities. *)
     let reduce_branches (thy' : t') branches : cached_branches =
       let go branch =
         match reduce_branch thy' branch with
@@ -287,9 +287,9 @@ struct
         | [] -> VarSet.empty
         | (_, (vars, _)) :: branches -> List.fold_left ~f:go ~init:vars branches
       in
-      (* The following is checking whether individual equations are useful (not shared
+      (* The following is checking whether individual inequalities are useful (not shared
        * by all the algebraic theories). It does not kill every "useless" equation where
-       * the uselessness can be only observed after looking at multiple equations.
+       * the uselessness can be only observed after looking at multiple inequalities.
        * Here is one example:
        *
        * branch 1: r=0
