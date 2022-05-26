@@ -1,3 +1,12 @@
+module type Vertex =
+sig
+  type t
+  val compare : t -> t -> int
+
+  val initial : t (* if you pretent the graph is a category *)
+  val terminal : t
+end
+
 module type S =
 sig
   type key
@@ -11,35 +20,51 @@ sig
   val merge : t -> t -> t
 end
 
-module Make (O : Map.OrderedType) : S with type key = O.t =
+module Make (V : Vertex) : S with type key = V.t =
 struct
-  module M = Map.Make (O)
-  module S = Set.Make (O)
+  module M = Map.Make (V)
+  module S = Set.Make (V)
 
-  type vertex = O.t
+  type vertex = V.t
   type key = vertex
 
-  let (=) v1 v2 = O.compare v1 v2 = 0
+  let (=) v1 v2 = V.compare v1 v2 = 0
 
   type t =
     { reachable : S.t M.t;
-      reduced : O.t list M.t }
+      reduced : V.t list M.t }
 
   let empty : t =
-    { reachable = M.empty; reduced = M.empty }
+    { reachable = M.of_seq @@ List.to_seq
+          [V.initial, S.of_list [V.initial; V.terminal];
+           V.terminal, S.singleton V.terminal];
+      reduced = M.of_seq @@ List.to_seq
+          [V.initial, [V.terminal];
+           V.terminal, []] }
 
   let mem_vertex (v : vertex) (g : t) : bool = M.mem v g.reachable
 
   let touch_vertex (v : vertex) (g : t) : t =
-    { reachable = M.update v (function None -> Some (S.singleton v) | _ as s -> s) g.reachable
-    ; reduced = M.update v (function None -> Some [] | _ as l -> l) g.reduced
-    }
+    if mem_vertex v g then g else
+      { reachable =
+          M.add v (S.add v (M.find V.terminal g.reachable)) @@
+          M.map (fun s -> if S.mem V.initial s then S.add v s else s) @@
+          g.reachable;
+        reduced =
+          M.update V.initial (fun l -> Some (v :: Option.get l)) @@
+          M.update v (function None -> Some [V.terminal] | _ as l -> l) @@
+          g.reduced
+      }
+
+  let raw_test (u : vertex) (v : vertex) (g : t) =
+    S.mem v (M.find u g.reachable)
 
   let test (u : vertex) (v : vertex) (g : t) =
-    if mem_vertex u g && mem_vertex v g then
-      S.mem v (M.find u g.reachable)
-    else
-      u = v
+    match mem_vertex u g, mem_vertex v g with
+    | true, true -> raw_test u v g
+    | true, false -> raw_test u V.initial g
+    | false, true -> raw_test V.terminal v g
+    | false, false -> u = v || raw_test V.terminal V.initial g
 
   let union (u : vertex) (v : vertex) (g : t) =
     if test u v g then g else

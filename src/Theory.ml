@@ -51,7 +51,12 @@ struct
 
   type cof = (dim, var) free
 
-  module Graph = Graph.Make (struct type t = dim let compare = compare_dim end)
+  module Graph = Graph.Make (struct
+      type t = dim
+      let compare = compare_dim
+      let initial = dim0
+      let terminal = dim1
+    end)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
   module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare x y) 0 end)
 
@@ -125,7 +130,7 @@ struct
       {thy with true_vars = VarSet.union vars thy.true_vars}
 
     let test_le (thy : t') (r, s) =
-      compare_dim r dim0 = 0 || compare_dim s dim1 = 0 || Graph.test r s thy.le
+      Graph.test r s thy.le
 
     let test_inconsistent (thy' : t') = test_le thy' (P.dim1, P.dim0)
 
@@ -133,7 +138,6 @@ struct
       * It is "unsafe" because we do not check consistency here. *)
     let unsafe_test_and_assume_le (thy : t') (r, s) =
       let testing, le = Graph.test_and_union r s thy.le in
-      let testing = compare_dim r dim0 = 0 || compare_dim s dim1 = 0 || testing in
       testing, {thy with le}
 
     let tri_test_le thy (x, y) =
