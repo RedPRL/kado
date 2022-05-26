@@ -4,9 +4,9 @@ sig
   type t
 
   val empty : t
-  val test_le : key -> key -> t -> bool
-  val union_le : key -> key -> t -> t
-  val test_and_union_le : key -> key -> t -> bool * t
+  val test : key -> key -> t -> bool
+  val union : key -> key -> t -> t
+  val test_and_union : key -> key -> t -> bool * t
 
   val merge : t -> t -> t
 end

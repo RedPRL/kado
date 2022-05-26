@@ -96,7 +96,9 @@ sig
         used in {!val:Builder.Endo.S.eq}, {!val:Builder.Endo.S.join}, and {!val:Builder.Endo.S.meet}. This is slower than {!val:Builder.Endo.S.forall}
         which does not take equations into consideration.
 
-        Note: this is experimental and might be removed if it turns out that we do not need it. *)
+        Note: this is experimental and might be removed if it turns out that we do not need it.
+        Also, [r] cannot be [dim0] or [dim1].
+    *)
     val forall_cof : t -> dim * cof -> cof
 
     (** [meet2 thy1 thy2] computes the conjunction of the two theories [thy1] and [thy2].

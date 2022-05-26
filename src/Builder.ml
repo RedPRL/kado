@@ -16,6 +16,7 @@ struct
     type dim
     type cof
     val cof : (dim, cof) Syntax.endo -> cof
+    val le : dim -> dim -> cof
     val eq : dim -> dim -> cof
     val eq0 : dim -> cof
     val eq1 : dim -> cof
@@ -31,32 +32,17 @@ struct
   struct
     include P
 
-    let eq x y = cof @@
-      let (=) = equal_dim in
+    let (=) = equal_dim
+
+    let le x y = cof @@
       if x = y then
         Syntax.Endo.top
-      else if (x = dim0 && y = dim1) || (x = dim1 && y = dim0) then
-        Syntax.Endo.bot
-      else
-        Syntax.Endo.eq x y
-
-    let eq0 x = cof @@
-      let (=) = equal_dim in
-      if x = dim0 then
+      else if x = dim0 || y = dim0 then
         Syntax.Endo.top
-      else if x = dim1 then
+      else if x = dim1 && y = dim0 then
         Syntax.Endo.bot
       else
-        Syntax.Endo.eq x dim0
-
-    let eq1 x = cof @@
-      let (=) = equal_dim in
-      if x = dim1 then
-        Syntax.Endo.top
-      else if x = dim0 then
-        Syntax.Endo.bot
-      else
-        Syntax.Endo.eq x dim1
+        Syntax.Endo.le x y
 
     let bot = cof Syntax.Endo.bot
     let top = cof Syntax.Endo.top
@@ -81,17 +67,24 @@ struct
         | [phi] -> phi
         | l -> cof @@ Syntax.Endo.meet l
 
+    let eq x y = meet [le x y; le y x]
+
+    let eq0 x = eq x dim0
+
+    let eq1 x = eq x dim1
+
     let boundary r = join [eq0 r; eq1 r]
 
     let forall (sym, cof) =
       let rec go cof =
         match uncof cof with
         | None -> cof
-        | Some Eq (x, y) ->
+        | Some Le (x, y) ->
           begin
             match equal_dim x sym, equal_dim y sym with
             | true, true -> top
-            | true, false | false, true -> bot
+            | true, false -> if y = dim1 then top else bot
+            | false, true -> if x = dim0 then top else bot
             | _ -> eq x y
           end
         | Some Meet phis -> meet @@ List.map go phis

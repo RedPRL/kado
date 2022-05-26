@@ -4,9 +4,9 @@ sig
   type t
 
   val empty : t
-  val test_le : key -> key -> t -> bool
-  val union_le : key -> key -> t -> t
-  val test_and_union_le : key -> key -> t -> bool * t
+  val test : key -> key -> t -> bool
+  val union : key -> key -> t -> t
+  val test_and_union : key -> key -> t -> bool * t
 
   val merge : t -> t -> t
 end
@@ -35,14 +35,14 @@ struct
     ; reduced = M.update v (function None -> Some [] | _ as l -> l) g.reduced
     }
 
-  let test_le (u : vertex) (v : vertex) (g : t) =
+  let test (u : vertex) (v : vertex) (g : t) =
     if mem_vertex u g && mem_vertex v g then
       S.mem v (M.find u g.reachable)
     else
       u = v
 
-  let union_le (u : vertex) (v : vertex) (g : t) =
-    if test_le u v g then g else
+  let union (u : vertex) (v : vertex) (g : t) =
+    if test u v g then g else
       let g = touch_vertex v @@ touch_vertex u g in
       let rec meld i rx =
         let f rx j = if S.mem j rx then rx else meld j (S.add j rx) in
@@ -57,9 +57,9 @@ struct
           else
             rx }
 
-  let test_and_union_le (u : vertex) (v : vertex) (g : t) =
-    test_le u v g, union_le u v g
+  let test_and_union (u : vertex) (v : vertex) (g : t) =
+    test u v g, union u v g
 
   let merge (g1 : t) (g2 : t) =
-    M.fold (fun u -> List.fold_right (union_le u)) g1.reduced g2
+    M.fold (fun u -> List.fold_right (union u)) g1.reduced g2
 end

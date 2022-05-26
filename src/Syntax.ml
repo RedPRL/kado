@@ -1,5 +1,5 @@
 type ('r, 'a) endo =
-  | Eq of 'r * 'r
+  | Le of 'r * 'r
   | Join of 'a list
   | Meet of 'a list
 
@@ -10,7 +10,7 @@ type ('r, 'v) free =
 module Endo =
 struct
   type ('r, 'a) t = ('r, 'a) endo =
-    | Eq of 'r * 'r
+    | Le of 'r * 'r
     | Join of 'a list
     | Meet of 'a list
 
@@ -20,18 +20,18 @@ struct
   let bot = join []
   let top = meet []
 
-  let eq x y = Eq (x, y)
+  let le x y = Le (x, y)
 
   let map f =
     function
-    | Eq _ as phi -> phi
+    | Le _ as phi -> phi
     | Join l -> Join (List.map f l)
     | Meet l -> Meet (List.map f l)
 
   let dump dump_r dump_a fmt =
     function
-    | Eq (r1, r2) ->
-      Format.fprintf fmt "@[<hv 1>eq[@,@[%a@];@,@[%a@]]@]" dump_r r1 dump_r r2
+    | Le (r1, r2) ->
+      Format.fprintf fmt "@[<hv 1>le[@,@[%a@];@,@[%a@]]@]" dump_r r1 dump_r r2
     | Join l ->
       Format.fprintf fmt "@[<hv 1>join[@,%a]@]"
         (Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ";@,") dump_a) l
@@ -43,7 +43,7 @@ end
 module Free =
 struct
   type nonrec ('r, 'a) endo = ('r, 'a) endo =
-    | Eq of 'r * 'r
+    | Le of 'r * 'r
     | Join of 'a list
     | Meet of 'a list
 
@@ -54,7 +54,7 @@ struct
   let var v = Var v
   let cof c = Cof c
 
-  let eq x y = cof @@ Endo.eq x y
+  let le x y = cof @@ Endo.le x y
   let join phis = cof @@ Endo.join phis
   let meet phis = cof @@ Endo.meet phis
   let bot = cof Endo.bot

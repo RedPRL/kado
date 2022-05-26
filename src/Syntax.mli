@@ -1,7 +1,7 @@
 (** A family of polynomial endofunctors [('r, -) t] indexed in an interpretation of the interval algebra ['r].
     This is for multiple types (for example, abstract syntax) to {e embed} the langauge of cofibrations. *)
 type ('r, 'a) endo =
-  | Eq of 'r * 'r
+  | Le of 'r * 'r
   | Join of 'a list
   | Meet of 'a list
 
@@ -20,12 +20,12 @@ sig
       @canonical Kado.Syntax.endo
   *)
   type ('r, 'a) t = ('r, 'a) endo =
-    | Eq of 'r * 'r
+    | Le of 'r * 'r
     | Join of 'a list
     | Meet of 'a list
 
-  (** [eq x y] is [Eq (x, y)] *)
-  val eq : 'r -> 'r -> ('r, 'a) t
+  (** [le x y] is [Le (x, y)] *)
+  val le : 'r -> 'r -> ('r, 'a) t
 
   (** [join phis] is [Join phis] *)
   val join : 'a list -> ('r, 'a) t
@@ -58,7 +58,7 @@ sig
       @canonical Kado.Syntax.endo
   *)
   type nonrec ('r, 'a) endo = ('r, 'a) endo =
-    | Eq of 'r * 'r
+    | Le of 'r * 'r
     | Join of 'a list
     | Meet of 'a list
 
@@ -77,8 +77,8 @@ sig
   (** [cof phi] is [Cof phi] *)
   val cof : ('r, ('r, 'v) t) endo -> ('r, 'v) t
 
-  (** [eq x y] is [Eq (x, y)] *)
-  val eq : 'a -> 'a -> ('a, 'v) t
+  (** [le x y] is [Le (x, y)] *)
+  val le : 'a -> 'a -> ('a, 'v) t
 
   (** [join phis] is [Cof (Join phis)] *)
   val join : ('a, 'v) t list -> ('a, 'v) t
