@@ -223,16 +223,13 @@ struct
         test_var thy' v
 
     (* XXX: this function was never profiled *)
-    let meet2' _thy'1 thy'2 =
-      (* TODO: functionality not yet supported by library *)
-      `Consistent thy'2
-
-    (* let preorder = Preorder.union thy'1.preorder thy'2.preorder in 
-       let true_vars = VarSet.union thy'1.true_vars thy'2.true_vars in
-       let thy' = {true_vars; preorder} in
-       match test_eq thy' (P.dim0, P.dim1) with
-       | true -> `Inconsistent
-       | false -> `Consistent thy' *)
+    let meet2' thy'1 thy'2 =
+      let true_vars = VarSet.union thy'1.true_vars thy'2.true_vars in
+      let graph = K.union thy'1.graph thy'2.graph in
+      let thy' = {true_vars; graph} in
+      match test_eq thy' (P.dim0, P.dim1) with
+      | true -> `Inconsistent
+      | false -> `Consistent thy'
 
     (* XXX: this function was never profiled *)
     let meet2 thy1 thy2 =
