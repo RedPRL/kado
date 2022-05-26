@@ -17,13 +17,13 @@ struct
     type cof
     val cof : (dim, cof) Syntax.endo -> cof
     val le : dim -> dim -> cof
-    val eq : dim -> dim -> cof
-    val eq0 : dim -> cof
-    val eq1 : dim -> cof
     val bot : cof
     val top : cof
     val join : cof list -> cof
     val meet : cof list -> cof
+    val eq : dim -> dim -> cof
+    val eq0 : dim -> cof
+    val eq1 : dim -> cof
     val boundary : dim -> cof
     val forall : dim * cof -> cof
   end
