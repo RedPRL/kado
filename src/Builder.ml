@@ -35,9 +35,7 @@ struct
     let (=) = equal_dim
 
     let le x y = cof @@
-      if x = y then
-        Syntax.Endo.top
-      else if x = dim0 || y = dim0 then
+      if dim0 = x || x = y || y = dim1 then
         Syntax.Endo.top
       else if x = dim1 && y = dim0 then
         Syntax.Endo.bot
