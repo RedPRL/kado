@@ -18,7 +18,7 @@ depends: [
   "odoc" {with-doc}
 ]
 pin-depends: [
-  [ "kusariyarou.~dev" "git+https://github.com/favonia/kusariyarou" ]
+  [ "kusariyarou.~dev" "git+https://github.com/jonsterling/kusariyarou#union" ]
 ]
 build: [
   ["dune" "build" "-p" name "-j" jobs]
