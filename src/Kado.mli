@@ -12,3 +12,7 @@ module Builder : module type of Builder
 
 (** The {!module:Theory} module implements decision procedures for sequents relative to a theory over the interval, stated in the language of cofibrations. *)
 module Theory : module type of Theory
+
+(**/**)
+
+module Graph : module type of Graph

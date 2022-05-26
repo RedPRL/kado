@@ -39,7 +39,10 @@ sig
     (** The embedding of cofibrations to [cof]. *)
     val cof : (dim, cof) Syntax.endo -> cof
 
-    (** Smarter version of {!val:Syntax.Endo.eq} that checks equality. *)
+    (** Smarter version of {!val:Syntax.Endo.le} that checks equality. *)
+    val le : dim -> dim -> cof
+
+    (** Smarter version of [meet [le x y; le y x]]. *)
     val eq : dim -> dim -> cof
 
     (** [eq0 r] is [eq r dim0]. *)
@@ -71,7 +74,10 @@ sig
     val boundary : dim -> cof
 
     (** [forall (r, cof)] computes [forall r. cof], using the syntactic quantifier elimination
-        and potentially other simplification procedures used in {!val:eq}, {!val:join}, and {!val:meet}. *)
+        and potentially other simplification procedures used in {!val:eq}, {!val:join}, and {!val:meet}.
+
+        Note: [r] cannot be [dim0] or [dim1].
+    *)
     val forall : dim * cof -> cof
   end
 

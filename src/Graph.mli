@@ -1,3 +1,12 @@
+module type Vertex =
+sig
+  type t
+  val compare : t -> t -> int
+
+  val initial : t
+  val terminal : t
+end
+
 module type S =
 sig
   type key
@@ -9,10 +18,6 @@ sig
   val test_and_union : key -> key -> t -> bool * t
 
   val merge : t -> t -> t
-
-  type finger
-  val finger : key -> t -> finger
-  val test_finger : key -> finger -> bool
 end
 
-module Make (O : Map.OrderedType) : S with type key = O.t
+module Make (V : Vertex) : S with type key = V.t

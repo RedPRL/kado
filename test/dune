@@ -1,0 +1,4 @@
+(test
+ (name Test)
+ (modules Test)
+ (libraries qcheck-core qcheck-core.runner kado))
