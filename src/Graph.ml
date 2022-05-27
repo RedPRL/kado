@@ -31,16 +31,16 @@ struct
   let (=) v1 v2 = V.compare v1 v2 = 0
 
   type t =
-    { reachable : S.t M.t;
-      reduced : V.t list M.t }
+    { reachable : S.t M.t; (* a map from vertices to their reachable vertices *)
+      reduced : V.t list M.t; (* a reduced graph exclding (v, 1) *)
+    }
 
   let empty : t =
     { reachable = M.of_seq @@ List.to_seq
           [V.initial, S.of_list [V.initial; V.terminal];
            V.terminal, S.singleton V.terminal];
       reduced = M.of_seq @@ List.to_seq
-          [V.initial, [V.terminal];
-           V.terminal, []] }
+          [V.initial, []; V.terminal, []] }
 
   let mem_vertex (v : vertex) (g : t) : bool = M.mem v g.reachable
 
@@ -52,9 +52,8 @@ struct
           g.reachable;
         reduced =
           M.update V.initial (fun l -> Some (v :: Option.get l)) @@
-          M.update v (function None -> Some [V.terminal] | _ as l -> l) @@
-          g.reduced
-      }
+          M.add v [] @@
+          g.reduced }
 
   let raw_test (u : vertex) (v : vertex) (g : t) =
     S.mem v (M.find u g.reachable)
