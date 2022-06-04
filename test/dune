@@ -1,4 +1,4 @@
 (test
- (name Test)
- (modules Test)
+ (name TestGraph)
+ (modules TestGraph)
  (libraries qcheck-core qcheck-core.runner kado))
