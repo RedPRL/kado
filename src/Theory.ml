@@ -58,7 +58,7 @@ struct
       let terminal = dim1
     end)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
-  module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare x y) 0 end)
+  module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare_dim x y) 0 end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
