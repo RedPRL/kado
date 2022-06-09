@@ -32,7 +32,7 @@ struct
 
   type t =
     { reachable : S.t M.t; (* a map from vertices to their reachable vertices *)
-      reduced : V.t list M.t; (* a reduced graph exclding (v, 1) *)
+      reduced : V.t list M.t; (* the reduced graph exclding (v, 1) *)
     }
 
   let empty : t =
@@ -51,6 +51,7 @@ struct
           M.map (fun s -> if S.mem V.initial s then S.add v s else s) @@
           g.reachable;
         reduced =
+          (* as an optimization, there's no need to the add edge (v, 1) because 1 is always reachable. *)
           M.update V.initial (fun l -> Some (v :: Option.get l)) @@
           M.add v [] @@
           g.reduced }
