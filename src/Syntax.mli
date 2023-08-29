@@ -72,25 +72,25 @@ sig
     | Var of 'v
 
   (** [var v] is [Var v] *)
-  val var : 'v -> ('a, 'v) t
+  val var : 'v -> ('r, 'v) t
 
   (** [cof phi] is [Cof phi] *)
   val cof : ('r, ('r, 'v) t) endo -> ('r, 'v) t
 
-  (** [le x y] is [Le (x, y)] *)
-  val le : 'a -> 'a -> ('a, 'v) t
+  (** [le x y] is [Cof (Le (x, y))] *)
+  val le : 'r -> 'r -> ('r, 'v) t
 
   (** [join phis] is [Cof (Join phis)] *)
-  val join : ('a, 'v) t list -> ('a, 'v) t
+  val join : ('r, 'v) t list -> ('r, 'v) t
 
   (** [meet phis] is [Cof (Meet phis)] *)
-  val meet : ('a, 'v) t list -> ('a, 'v) t
+  val meet : ('r, 'v) t list -> ('r, 'v) t
 
   (** [bot] is [Cof (Join [])] *)
-  val bot : ('a, 'v) t
+  val bot : ('r, 'v) t
 
   (** [top] is [Cof (Meet [])] *)
-  val top : ('a, 'v) t
+  val top : ('r, 'v) t
 
   (** Ugly printer. *)
   val dump :
