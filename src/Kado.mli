@@ -1,4 +1,4 @@
-(** The [antikado] library implements the syntax and semantics of cofibrations as described by {{:https://doi.org/10.1017/S0960129521000347} ABCFHL}. *)
+(** The [kado] library implements the syntax and semantics of cofibrations as described by {{:https://doi.org/10.1017/S0960129521000347} ABCFHL}. *)
 
 (** {1 Syntax} *)
 
