@@ -42,7 +42,7 @@ sig
     (** The type of built cofibrations. *)
     type t = cof
 
-    (** The embedding of cofibrations to [cof]. *)
+    (** The embedding of cofibrations to [t]. *)
     val cof : (dim, t) Syntax.endo -> t
 
     (** Smarter version of {!val:Syntax.Endo.le}. *)
