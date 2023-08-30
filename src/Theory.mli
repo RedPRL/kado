@@ -23,12 +23,14 @@ end
 (** The signature of cofibration solvers. *)
 module type S =
 sig
+  module Param : sig
+    (** The type of dimensions. *)
+    type dim
 
-  (** The type of dimensions. *)
-  type dim
-
-  (** The type of cofibration variables. *)
-  type var
+    (** The type of cofibration variables. *)
+    type var
+  end
+  open Param
 
   (** The type of cofibrations. *)
   type cof = (dim, var) Syntax.free
@@ -108,4 +110,4 @@ sig
 end
 
 (** The cofibration solver. *)
-module Make (P : Param) : S with type dim = P.dim and type var = P.var
+module Make (Param : Param) : S with module Param := Param

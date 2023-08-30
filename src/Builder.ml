@@ -13,8 +13,13 @@ struct
 
   module type S =
   sig
-    type dim
-    type cof
+    module Param : sig
+      type dim
+      type cof
+    end
+    open Param
+
+    type t = cof
     val cof : (dim, cof) Syntax.endo -> cof
     val le : dim -> dim -> cof
     val bot : cof
@@ -28,9 +33,11 @@ struct
     val forall : dim * cof -> cof
   end
 
-  module Make (P : Param) : S with type dim = P.dim and type cof = P.cof =
+  module Make (Param : Param) : S with module Param := Param =
   struct
-    include P
+    include Param
+
+    type t = cof
 
     let (=) = equal_dim
 
@@ -105,27 +112,28 @@ struct
 
   module type S =
   sig
-    type dim
-    type var
-    type cof = (dim, var) Syntax.free
-
-    val var : var -> cof
-    include Endo.S with type dim := dim and type cof := cof
+    module Param : sig
+      type dim
+      type var
+    end
+    open Param
+    include Endo.S with type Param.cof := (dim, var) Syntax.free and module Param := Param
+    val var : var -> t
   end
 
-  module Make (P : Param) : S with type dim = P.dim and type var = P.var =
+  module Make (Param : Param) : S with module Param := Param =
   struct
     open Syntax.Free
 
-    let var = var
-    module P = struct
-      include P
+    module Param = struct
+      include Param
       type cof = (dim, var) Syntax.free
       let cof phi = Cof phi
       let uncof phi = match phi with Cof phi -> Some phi | _ -> None
     end
+    include Param
+    include Endo.Make(Param)
 
-    include P
-    include Endo.Make(P)
+    let var = var
   end
 end

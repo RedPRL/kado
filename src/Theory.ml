@@ -13,8 +13,12 @@ end
 
 module type S =
 sig
-  type dim
-  type var
+  module Param : sig
+    type dim
+    type var
+  end
+  open Param
+
   type cof = (dim, var) Syntax.free
   type alg_thy
   type disj_thy
@@ -43,9 +47,9 @@ sig
   end
 end
 
-module Make (P : Param) : S with type dim = P.dim and type var = P.var =
+module Make (Param : Param) : S with module Param := Param =
 struct
-  include P
+  include Param
 
   open Syntax
 
@@ -58,7 +62,10 @@ struct
       let terminal = dim1
     end)
   module VarSet = Set.Make (struct type t = var let compare = compare_var end)
-  module B = Builder.Free.Make (struct include P let equal_dim x y = Int.equal (compare_dim x y) 0 end)
+  module B = Builder.Free.Make (struct
+      include Param
+      let equal_dim x y = Int.equal (compare_dim x y) 0
+    end)
 
   (** A presentation of an algebraic theory over the language of intervals and cofibrations. *)
   type alg_thy' =
@@ -132,7 +139,7 @@ struct
     let test_le (thy : t') (r, s) =
       Graph.test r s thy.le
 
-    let test_inconsistent (thy' : t') = test_le thy' (P.dim1, P.dim0)
+    let test_inconsistent (thy' : t') = test_le thy' (dim1, dim0)
 
     (** [unsafe_test_and_assume_eq] fuses [test_eq] and [assume_eq] (if there was one).
       * It is "unsafe" because we do not check consistency here. *)

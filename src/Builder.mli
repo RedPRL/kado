@@ -30,23 +30,29 @@ sig
   (** The signature of smart constructors. *)
   module type S =
   sig
-    (** The interval algebra. *)
-    type dim
+    module Param : sig
+      (** The interval algebra. *)
+      type dim
 
-    (** The type that embeds cofibrations. *)
-    type cof
+      (** The type that embeds cofibrations. *)
+      type cof
+    end
+    open Param
+
+    (** The type of built cofibrations. *)
+    type t = cof
 
     (** The embedding of cofibrations to [cof]. *)
-    val cof : (dim, cof) Syntax.endo -> cof
+    val cof : (dim, t) Syntax.endo -> t
 
     (** Smarter version of {!val:Syntax.Endo.le}. *)
-    val le : dim -> dim -> cof
+    val le : dim -> dim -> t
 
     (** The bottom cofibration. *)
-    val bot : cof
+    val bot : t
 
     (** The top cofibration. *)
-    val top : cof
+    val top : t
 
     (** Smarter version of {!val:Syntax.Endo.join} that simplifies cofibrations using syntactic criteria.
         For example, [join [meet []]] gives [cof (Meet [])].
@@ -55,34 +61,34 @@ sig
         and thus it will not perform all possible syntactic reduction. To obtain more reduced cofibrations,
         use only smart constructors (instead of raw constructors) to build cofibrations.
     *)
-    val join : cof list -> cof
+    val join : t list -> t
 
     (** Smarter version of {!val:Syntax.Endo.meet} that simplifies cofibrations using syntactic criteria.
         See {!val:join}. *)
-    val meet : cof list -> cof
+    val meet : t list -> t
 
     (** [eq] is equivalent to [meet [le x y; le y x]]. *)
-    val eq : dim -> dim -> cof
+    val eq : dim -> dim -> t
 
     (** [eq0 r] is equivalent to [eq r dim0]. *)
-    val eq0 : dim -> cof
+    val eq0 : dim -> t
 
     (** [eq1 r] is equivalent to [eq r dim1]. *)
-    val eq1 : dim -> cof
+    val eq1 : dim -> t
 
     (** [boundary r] is equivalent to [join [eq0 r; eq1 r]]. *)
-    val boundary : dim -> cof
+    val boundary : dim -> t
 
     (** [forall (r, cof)] computes [forall r. cof], using the syntactic quantifier elimination
         and potentially other simplification procedures used in {!val:le}, {!val:join}, and {!val:meet}.
 
         Note: [r] cannot be [dim0] or [dim1].
     *)
-    val forall : dim * cof -> cof
+    val forall : dim * t -> t
   end
 
   (** The implementation of smart constructors. *)
-  module Make (P : Param) : S with type dim = P.dim and type cof = P.cof
+  module Make (Param : Param) : S with module Param := Param
 end
 
 (** Smart constructors for {!type:Syntax.free}. *)
@@ -111,22 +117,22 @@ sig
   (** The signature of smart constructors. *)
   module type S =
   sig
-    (** The interval algebra. *)
-    type dim
+    module Param : sig
+      (** The interval algebra. *)
+      type dim
 
-    (** The type of cofibration variables. *)
-    type var
-
-    (** The type of freely generated cofibrations. *)
-    type cof = (dim, var) Syntax.free
-
-    (** Alias of {!val:Syntax.Free.var}. *)
-    val var : var -> cof
+      (** The type of cofibration variables. *)
+      type var
+    end
+    open Param
 
     (** @open *)
-    include Endo.S with type dim := dim and type cof := cof
+    include Endo.S with type Param.cof := (dim, var) Syntax.free and module Param := Param
+
+    (** Alias of {!val:Syntax.Free.var}. *)
+    val var : var -> t
   end
 
   (** The implementation of smart constructors. *)
-  module Make (P : Param) : S with type dim = P.dim and type var = P.var
+  module Make (Param : Param) : S with module Param := Param
 end
