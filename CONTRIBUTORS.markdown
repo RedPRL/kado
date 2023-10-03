@@ -1,4 +1,4 @@
 # CONTRIBUTORS
 
-Favonia
-Jonathan Sterling
+- Favonia
+- Jonathan Sterling
