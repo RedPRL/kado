@@ -6,7 +6,7 @@ Cofibrations in Cartecian cubical type theory as described in the paper 'Syntax 
 """
 maintainer: "favonia <favonia@gmail.com>"
 authors: "The RedPRL Development Team"
-license: "Apache-2.0"
+license: "Apache-2.0 WITH LLVM-exception"
 homepage: "https://github.com/RedPRL/kado"
 bug-reports: "https://github.com/RedPRL/kado/issues"
 dev-repo: "git+https://github.com/RedPRL/kado.git"
